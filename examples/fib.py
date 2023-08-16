@@ -1,7 +1,3 @@
-import sys
-
-sys.path.append("C:\cmake/bochscpu-py/install-win32/x64/bindings/python")
-
 import dataclasses
 import struct
 import capstone

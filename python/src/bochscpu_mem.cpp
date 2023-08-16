@@ -6,16 +6,6 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/vector.h>
 
-#if defined(_WIN32)
-#include <windows.h>
-#elif defined(linux) || defined(__linux)
-#include <sys/mman.h>
-#elif defined(__APPLE__)
-#include <sys/mman.h>
-#else
-#error Not supported
-#endif // _WIN32
-
 #include <span>
 
 #include "bochscpu.hpp"
@@ -55,27 +45,6 @@ uint64_t
 AlignPageToPage(uint64_t va)
 {
     return va & ~0xfff;
-}
-
-
-static inline uint64_t
-AllocatePage()
-{
-#if defined(_WIN32)
-    return (uint64_t)::VirtualAlloc(nullptr, PageSize(), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-#else
-    return (uint64_t)::mmap(nullptr, PageSize(), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-#endif // _WIN32
-}
-
-static inline bool
-FreePage(uint64_t addr)
-{
-#if defined(_WIN32)
-    return ::VirtualFree((LPVOID)addr, 0, MEM_RELEASE) == TRUE;
-#else
-    return ::munmap(addr, PageSize()) == 0;
-#endif // _WIN32
 }
 
 
@@ -188,18 +157,18 @@ PageMapLevel4Table::Commit(uint64_t BasePA)
     // pair<HVA, GPA>
     auto AllocatePage = [this, PageSize, &CurrentPA]() -> std::pair<uint64_t, uint64_t>
     {
-        auto h = ::VirtualAlloc(nullptr, PageSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+        auto h = BochsCPU::AllocatePage();
         if ( !h )
             throw std::bad_alloc();
 
         //
         // Keep track of the allocated pages for deletion
         //
-        m_AllocatedPages.push_back((uint64_t)h);
+        m_AllocatedPages.push_back(h);
 
         uint64_t pa {CurrentPA};
         CurrentPA += PageSize;
-        return {(uint64_t)h, pa};
+        return {h, pa};
     };
 
     const size_t view_size = PageSize / sizeof(uint64_t);

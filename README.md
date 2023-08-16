@@ -20,11 +20,35 @@ python -m pip wheel . -w .\wheel\
 
 ## Install
 
+### From the source repository
+
 ```
 python -m pip install .
 ```
 
-## TODO
+Or without cloning
 
- - Automated build via CI
- - PyPI package via CI
+```
+python -m pip install git+https://github.com/hugsy/bochscpu-python.git#egg=bochscpu
+```
+
+
+### Via PyPI
+
+```
+python -m pip install bochscpu
+```
+
+
+### Via the generated builds
+
+Download the latest working artifact from [the repository Github Actions tab]. Extract the ZIP file, install the `.whl` file you'll find inside the `wheel` folder.
+
+```
+python -m pip install wheel/bochscpu-$version-$os-$arch.whl
+```
+
+
+## Usage
+
+Just import the `bochscpu` module

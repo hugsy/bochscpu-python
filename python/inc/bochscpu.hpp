@@ -6,6 +6,16 @@
 #include <utility>
 #include <vector>
 
+#if defined(_WIN32)
+#include <windows.h>
+#elif defined(linux) || defined(__linux)
+#include <sys/mman.h>
+#elif defined(__APPLE__)
+#include <sys/mman.h>
+#else
+#error Not supported
+#endif // _WIN32
+
 #include "bochscpu/bochscpu.hpp"
 
 // #define DEBUG
@@ -411,6 +421,26 @@ struct Session
     std::function<void(uint64_t)> missing_page_handler;
     BochsCPU::Cpu::CPU cpu {};
 };
+
+static inline uint64_t
+AllocatePage()
+{
+#if defined(_WIN32)
+    return (uint64_t)::VirtualAlloc(nullptr, Memory::PageSize(), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+#else
+    return (uint64_t)::mmap(nullptr, Memory::PageSize(), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#endif // _WIN32
+}
+
+static inline bool
+FreePage(uint64_t addr)
+{
+#if defined(_WIN32)
+    return ::VirtualFree((LPVOID)addr, 0, MEM_RELEASE) == TRUE;
+#else
+    return ::munmap((void*)addr, Memory::PageSize()) == 0;
+#endif // _WIN32
+}
 
 
 } // namespace BochsCPU
