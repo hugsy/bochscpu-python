@@ -2,7 +2,7 @@
 
 Python bindings for [@yrp](https://github.com/yrp604/)'s [BochsCPU](https://github.com/yrp604/bochscpu) using [FFI](https://github.com/yrp604/bochscpu-ffi)
 
-![image](https://github.com/hugsy/bochscpu-python/assets/590234/11c17158-8e34-4c06-860a-3fb4598b2273)
+![image](https://i.imgur.com/YvXg2Tz.png)
 
 ## Build
 
