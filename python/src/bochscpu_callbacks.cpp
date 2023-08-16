@@ -13,21 +13,6 @@
 namespace BochsCPU::Callbacks
 {
 
-std::function<void(uint64_t)> Memory::missing_page_handler;
-
-void
-Memory::missing_page_cb(uint64_t gpa)
-{
-    dbg("missing gpa=%#llx", gpa);
-    [[unlikely]] if ( (bool)missing_page_handler == false )
-    {
-        __debugbreak();
-        throw std::runtime_error("[CRITICAL] PageFault handler has not been defined");
-    }
-
-    missing_page_handler(gpa);
-}
-
 
 void
 before_execution_cb(context_t* ctx, uint32_t cpu_id, void* insn)
@@ -147,9 +132,9 @@ repeat_iteration_cb(context_t* ctx, uint32_t cpu_id, void* insn)
 }
 
 void
-lin_access_cb(context_t* ctx, uint32_t cpu_id, uint64_t lin, uint64_t phy, uintptr_t len, uint32_t rw, uint32_t x)
+lin_access_cb(context_t* ctx, uint32_t cpu_id, uint64_t lin, uint64_t phy, uintptr_t len, uint32_t rw, uint32_t access)
 {
-    EXECUTE_CB(ctx, lin_access, cpu_id, lin, phy, len, rw, x);
+    EXECUTE_CB(ctx, lin_access, cpu_id, lin, phy, len, rw, access);
 }
 
 void

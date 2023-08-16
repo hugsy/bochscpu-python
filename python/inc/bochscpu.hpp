@@ -8,7 +8,7 @@
 
 #include "bochscpu/bochscpu.hpp"
 
-// #define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #define GEN_FMT "[%s::%d] "
@@ -45,6 +45,7 @@
 
 namespace BochsCPU
 {
+
 struct Hook
 {
     void* ctx {nullptr};
@@ -80,8 +81,6 @@ namespace Callbacks
 {
 namespace Memory
 {
-extern std::function<void(uint64_t)> missing_page_handler;
-
 void
 missing_page_cb(uint64_t gpa);
 } // namespace Memory
@@ -256,7 +255,7 @@ struct PageTable
         NX            = 63,
     };
 
-    std::array<std::shared_ptr<PageTableEntry>, 512> Entries {};
+    std::array<std::unique_ptr<PageTableEntry>, 512> Entries {};
     std::bitset<64> Flags {};
 
     PageTable() = default;
@@ -276,7 +275,7 @@ struct PageDirectory
         NX            = 63,
     };
 
-    std::array<std::shared_ptr<PageTable>, 512> Entries {};
+    std::array<std::unique_ptr<PageTable>, 512> Entries {};
     std::bitset<64> Flags {};
 
     PageDirectory() = default;
@@ -296,7 +295,7 @@ struct PageDirectoryPointerTable
         NX            = 63,
     };
 
-    std::array<std::shared_ptr<PageDirectory>, 512> Entries {};
+    std::array<std::unique_ptr<PageDirectory>, 512> Entries {};
     std::bitset<64> Flags {};
 
     PageDirectoryPointerTable() = default;
@@ -336,7 +335,7 @@ public:
     Decommit();
 
 public: // members
-    std::array<std::shared_ptr<PageDirectoryPointerTable>, 512> Entries {};
+    std::array<std::unique_ptr<PageDirectoryPointerTable>, 512> Entries {};
     std::bitset<64> Flags {};
 
 
@@ -361,5 +360,33 @@ private:
 };
 
 } // namespace Memory
+
+static inline std::unique_ptr<std::function<void(uint64_t)>> missing_page_handler;
+
+static void
+missing_page_cb(uint64_t gpa)
+{
+    dbg("missing gpa=%#llx", gpa);
+    (*missing_page_handler)(gpa);
+}
+
+struct Session
+{
+    Session()
+    {
+        ::bochscpu_mem_missing_page(BochsCPU::missing_page_cb);
+        BochsCPU::missing_page_handler = std::unique_ptr<std::function<void(uint64_t)>>(&this->missing_page_handler);
+        // cpu                            = ::bochscpu_cpu_new(0);
+    }
+
+    ~Session()
+    {
+        // ::bochscpu_cpu_delete(cpu);
+        BochsCPU::missing_page_handler.release();
+    }
+
+    std::function<void(uint64_t)> missing_page_handler;
+    bochscpu_cpu_t cpu {};
+};
 
 } // namespace BochsCPU

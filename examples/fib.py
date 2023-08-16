@@ -1,4 +1,11 @@
+import sys
+
+sys.path.append("C:\cmake/bochscpu-py/install-win32/x64/bindings/python")
+
+import dataclasses
 import struct
+import capstone
+import keystone
 
 from typing import Any
 
@@ -7,16 +14,24 @@ import time
 import bochscpu
 
 DEBUG = True
+PAGE_SIZE = bochscpu.memory.PageSize()
 
-executed_instruction_nb: int = 0
+
+@dataclasses.dataclass
+class Stats:
+    insn_nb: int = 0
+    mem_access: list[int] = dataclasses.field(default_factory=lambda: [0, 0, 0])
 
 
-def dbg(x):
+stats = Stats()
+
+
+def dbg(x: str):
     if DEBUG:
         print(f"[Py] {x}")
 
 
-def VirtualAlloc(sz: int = bochscpu.memory.PageSize(), perm: str = "rwx"):
+def VirtualAlloc(sz: int = PAGE_SIZE, perm: str = "rw"):
     MEM_COMMIT = 0x1000
     MEM_RESERVE = 0x2000
     PAGE_NOACCESS = 0x01
@@ -67,30 +82,65 @@ def dump_page_table(addr: int, level: int = 0):
         dump_page_table(entry, level + 1)
 
 
-def missing_page_cb(gpa: int) -> None:
+def dump_registers(state: bochscpu.State, type: int = 0):
+    # UM
+    print(
+        f"""
+rax={state.rax:016x} rbx={state.rbx:016x} rcx={state.rcx:016x}
+rdx={state.rdx:016x} rsi={state.rsi:016x} rdi={state.rdi:016x}
+rip={state.rip:016x} rsp={state.rsp:016x} rbp={state.rbp:016x}
+ r8={ state.r8:016x}  r9={ state.r9:016x} r10={state.r10:016x}
+r11={state.r11:016x} r12={state.r12:016x} r13={state.r13:016x}
+r14={state.r14:016x} r15={state.r15:016x} efl={state.rflags:016x}
+
+cs={int(state.cs):04x}  ss={int(state.ss):04x}  ds={int(state.ds):04x}  es={int(state.es):04x}  fs={int(state.fs):04x}  gs={int(state.gs):04x}
+"""
+    )
+
+    if type < 1:
+        return
+
+    # KM
+    print(
+        f"""
+cr0={state.cr0:016x}  cr2={state.cr2:016x}  cr3={state.cr3:016x}  cr4={state.cr4:016x}
+dr0={state.dr0:016x}  dr1={state.dr1:016x}  dr2={state.dr2:016x}  dr3={state.dr3:016x}
+dr6={state.dr6:016x}  dr7={state.dr7:016x}  efer={state.efer:016x}
+"""
+    )
+
+
+def missing_page_cb(gpa):
     raise Exception(f"missing_page_cb({gpa=:#x})")
 
 
-def exception_cb(ctx: Any, cpu_id: int, vector: int, error_code: int):
-    dbg(f"received `exception({vector=:d}, {error_code=:d})` from cpu#{cpu_id}")
-    cpu = bochscpu.bochscpu_cpu_from(cpu_id)
-    bochscpu.bochscpu_cpu_stop(cpu)
+def exception_cb(ctx, cpu_id, vector, error_code):
+    dbg(f"received exception({vector=:d}, {error_code=:d}) from cpu#{cpu_id}")
+    bochscpu.bochscpu_cpu_stop(bochscpu.bochscpu_cpu_from(cpu_id))
+
+
+def lin_access_cb(
+    _: Any, cpu_id: int, lin: int, phy: int, len: int, rw: int, access: int
+):
+    global stats
+    stats.mem_access[access] += 1
 
 
 def after_execution_cb(ctx: Any, cpu_id: int, insn: int):
-    global executed_instruction_nb
-    executed_instruction_nb += 1
+    global stats
+    stats.insn_nb += 1
 
 
-def emulate(code: bytearray):
+def emulate(code: bytes):
     CODE = 0
     RW = 1
 
     #
     # Setup the PF handler very early to let Python handle it, rather than rust panicking
     #
+    sess = bochscpu.session()
     dbg("setting pf handler")
-    bochscpu.bochscpu_mem_missing_page(missing_page_cb)
+    sess.missing_page_handler = missing_page_cb
 
     #
     # Setup control registers to enable PG/PE and long mode
@@ -118,7 +168,7 @@ def emulate(code: bytearray):
     dbg(f"inserting {shellcode_gva=:#x} -> {shellcode_gpa=:#x} ->  {shellcode_hva=:#x}")
     bochscpu.bochscpu_mem_page_insert(shellcode_gpa, shellcode_hva)
 
-    stack_hva = VirtualAlloc(perm="rw")
+    stack_hva = VirtualAlloc()
     stack_gva = 0x0401_0000
     stack_gpa = 0x1401_0000
     dbg(f"inserting {stack_gva=:#x} -> {stack_gpa=:#x} -> {stack_hva=:#x}")
@@ -161,8 +211,7 @@ def emulate(code: bytearray):
     dbg("created cpu#0")
 
     state = bochscpu.State()
-    state.rax = 0x10
-    state.rsp = stack_gva
+    state.rsp = stack_gva + PAGE_SIZE // 2
     state.rip = shellcode_gva
     state.cr0 = int(cr0)
     state.cr3 = pml4
@@ -188,49 +237,70 @@ def emulate(code: bytearray):
     state.gs = ds
     bochscpu.bochscpu_cpu_set_state(cpu, state)
     dbg("loaded state for cpu#0")
+    # dump_registers(state)
 
     hooks = []
     hook = bochscpu.Hook()
     hook.exception = exception_cb
     hook.after_execution = after_execution_cb
+    hook.lin_access = lin_access_cb
     hooks.append(hook)
     dbg("hooks ok")
 
     dbg("starting the vm...")
-    t1 = time.time()
-    bochscpu.bochscpu_cpu_run(cpu, hooks)
-    t2 = time.time()
-    dbg(
-        f"vm stopped, execution: {executed_instruction_nb} insns in {float((t2-t1)*1000.0)}ms"
-    )
+    t1 = time.time_ns()
+    sess.run(cpu, hooks)
+    t2 = time.time_ns()
+    dbg(f"vm stopped, execution: {stats.insn_nb} insns in {t2-t1}ns")
+
+    if stats.insn_nb < len(INSNS):
+        dbg(f"last insn executed: {INSNS[stats.insn_nb]}")
+    if stats.insn_nb - 1 < len(INSNS):
+        dbg(f"next insn: {INSNS[stats.insn_nb+1]}")
 
     dbg("reading new state")
     new_state = bochscpu.State()
     bochscpu.bochscpu_cpu_state(cpu, new_state)
-    dbg(f"{state.rax=:#x} vs {new_state.rax=:#x}")
+    dump_registers(new_state)
     bochscpu.bochscpu_cpu_delete(cpu)
-
-    assert state.rax + 8 == new_state.rax
     return
 
 
 if __name__ == "__main__":
-    emulate(
-        bytearray(
-            # fmt: off
-            [
-                0x48, 0xff, 0xc0,  # inc rax
-                0x48, 0xff, 0xc0,  # inc rax
-                0x48, 0xff, 0xc0,  # inc rax
-                0x48, 0xff, 0xc0,  # inc rax
+    # from https://github.com/yrp604/bochscpu-bench/tree/master/asm
+    ks = keystone.Ks(keystone.KS_ARCH_X86, keystone.KS_MODE_64)
+    fib = """
+_start:
+    push 0
+    push 0
+    push 1
 
-                0x48, 0xff, 0xc0,  # inc rax
-                0x48, 0xff, 0xc0,  # inc rax
-                0x48, 0xff, 0xc0,  # inc rax
-                0x48, 0xff, 0xc0,  # inc rax
+loop:
+    pop rax
+    pop rbx
+    pop rcx
 
-                0xf4               # hlt
-            ]
-            # fmt: on
-        )
-    )
+    mov rdx, rax
+    add rax, rbx
+    mov rbx, rdx
+
+    inc rcx
+
+    push rcx
+    push rbx
+    push rax
+
+    cmp rcx, 0xffffff
+    jne loop
+
+    nop
+    hlt
+"""
+
+    cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+    code, _ = ks.asm(fib)
+    assert isinstance(code, list)
+    code = bytearray(code)
+    INSNS = [i for i in cs.disasm(code, 0)]
+    # dbg(str(INSNS))
+    emulate(code)
