@@ -18,6 +18,13 @@ mkdir wheel
 python -m pip wheel . -w .\wheel\
 ```
 
+## Install
+
+```
+python -m pip install .
+```
+
 ## TODO
+
  - Automated build via CI
  - PyPI package via CI

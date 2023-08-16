@@ -5,11 +5,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION True)
 
 project(
-    PyBochsCPU
+    bochscpu-python
     LANGUAGES CXX
     VERSION 0.1.0
     DESCRIPTION "Python bindings for BochsCPU"
-    HOMEPAGE_URL https://github.com/hugsy/Py-BochsCPU
+    HOMEPAGE_URL https://github.com/hugsy/bochscpu-python
 )
 
 set(PROJECT_AUTHOR hugsy)
