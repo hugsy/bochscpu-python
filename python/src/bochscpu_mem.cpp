@@ -5,7 +5,16 @@
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/vector.h>
+
+#if defined(_WIN32)
 #include <windows.h>
+#elif defined(linux) || defined(__linux)
+#include <sys/mman.h>
+#elif defined(__APPLE__)
+#include <sys/mman.h>
+#else
+#error Not supported
+#endif // _WIN32
 
 #include <span>
 
@@ -34,6 +43,7 @@ bochscpu_memory_module(nb::module_& base_module)
 namespace BochsCPU::Memory
 {
 
+
 uintptr_t
 PageSize()
 {
@@ -48,6 +58,27 @@ AlignPageToPage(uint64_t va)
 }
 
 
+static inline uint64_t
+AllocatePage()
+{
+#if defined(_WIN32)
+    return (uint64_t)::VirtualAlloc(nullptr, PageSize(), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+#else
+    return (uint64_t)::mmap(nullptr, PageSize(), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#endif // _WIN32
+}
+
+static inline bool
+FreePage(uint64_t addr)
+{
+#if defined(_WIN32)
+    return ::VirtualFree((LPVOID)addr, 0, MEM_RELEASE) == TRUE;
+#else
+    return ::munmap(addr, PageSize()) == 0;
+#endif // _WIN32
+}
+
+
 //
 // shamelessly ported from yrp's rust implem, because it was late and I wanted to finish
 // kudos to him
@@ -57,7 +88,7 @@ PageMapLevel4Table::~PageMapLevel4Table()
 {
     for ( auto addr : m_AllocatedPages )
     {
-        (void)::VirtualFree((LPVOID)addr, 0, MEM_RELEASE);
+        FreePage(addr);
     }
 }
 
@@ -96,9 +127,9 @@ PageMapLevel4Table::Insert(uint64_t va, uint64_t pa, int type)
     // L4 insertion
     uint64_t idx = PageMapLevel4Index(va);
     if ( !Entries[idx] )
-        Entries[idx] = std::make_shared<PageDirectoryPointerTable>();
+        Entries[idx] = std::make_unique<PageDirectoryPointerTable>();
 
-    auto pdpe = Entries.at(idx);
+    auto& pdpe = Entries.at(idx);
     pdpe->Flags.set((int)PageDirectoryPointerTable::Flag::Present);
     pdpe->Flags.set((int)PageDirectoryPointerTable::Flag::User);
 
@@ -109,9 +140,9 @@ PageMapLevel4Table::Insert(uint64_t va, uint64_t pa, int type)
     // L3 insertion
     idx = PageDirectoryPointerTableIndex(va);
     if ( !pdpe->Entries[idx] )
-        pdpe->Entries[idx] = std::make_shared<PageDirectory>();
+        pdpe->Entries[idx] = std::make_unique<PageDirectory>();
 
-    auto pde = pdpe->Entries.at(idx);
+    auto& pde = pdpe->Entries.at(idx);
     pde->Flags.set((int)PageDirectoryPointerTable::Flag::Present);
     pde->Flags.set((int)PageDirectoryPointerTable::Flag::User);
 
@@ -122,9 +153,9 @@ PageMapLevel4Table::Insert(uint64_t va, uint64_t pa, int type)
     // L2 insertion
     idx = PageDirectoryIndex(va);
     if ( !pde->Entries[idx] )
-        pde->Entries[idx] = std::make_shared<PageTable>();
+        pde->Entries[idx] = std::make_unique<PageTable>();
 
-    auto pte = pde->Entries.at(idx);
+    auto& pte = pde->Entries.at(idx);
     pte->Flags.set((int)PageTable::Flag::Present);
     pte->Flags.set((int)PageTable::Flag::User);
 
@@ -135,9 +166,9 @@ PageMapLevel4Table::Insert(uint64_t va, uint64_t pa, int type)
     // L1 insertion
     idx = PageTableIndex(va);
     if ( !pte->Entries[idx] )
-        pte->Entries[idx] = std::make_shared<PageTableEntry>();
+        pte->Entries[idx] = std::make_unique<PageTableEntry>();
 
-    auto page = pte->Entries.at(idx);
+    auto& page = pte->Entries.at(idx);
     page->Flags.set((int)PageTableEntry::Flag::Present);
     page->Flags.set((int)PageTableEntry::Flag::User);
 
@@ -155,11 +186,16 @@ PageMapLevel4Table::Commit(uint64_t BasePA)
     uint64_t CurrentPA {BasePA};
 
     // pair<HVA, GPA>
-    auto AllocatePage = [PageSize, &CurrentPA]() -> std::pair<uint64_t, uint64_t>
+    auto AllocatePage = [this, PageSize, &CurrentPA]() -> std::pair<uint64_t, uint64_t>
     {
         auto h = ::VirtualAlloc(nullptr, PageSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
         if ( !h )
             throw std::bad_alloc();
+
+        //
+        // Keep track of the allocated pages for deletion
+        //
+        m_AllocatedPages.push_back((uint64_t)h);
 
         uint64_t pa {CurrentPA};
         CurrentPA += PageSize;
@@ -235,16 +271,6 @@ PageMapLevel4Table::Commit(uint64_t BasePA)
     }
 
     mapped_locations.push_back(mapped_pml4);
-
-
-    //
-    // Keep track of the allocated pages for deletion
-    //
-    for ( auto const& entry : mapped_locations )
-    {
-        m_AllocatedPages.push_back(entry.first);
-    }
-
     return mapped_locations;
 }
 
