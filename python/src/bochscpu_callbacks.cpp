@@ -4,10 +4,10 @@
     {                                                                                                                  \
         Hook* ptr = (Hook*)ctx;                                                                                        \
         if ( !ptr )                                                                                                    \
-            throw std::runtime_error("");                                                                              \
+            throw std::runtime_error("Context for callback " #n " is null");                                           \
         if ( !ptr->n )                                                                                                 \
             return;                                                                                                    \
-        ptr->n(ptr->ctx, __VA_ARGS__);                                                                                 \
+        ptr->n((BochsCPU::Session*)ptr->ctx, __VA_ARGS__);                                                             \
     }
 
 namespace BochsCPU::Callbacks

@@ -23,7 +23,6 @@ bochscpu_cpu_module(nb::module_& m);
 int
 bochscpu_tp_traverse(PyObject* self, visitproc visit, void* arg)
 {
-    dbg("in bochscpu_tp_traverse");
     BochsCPU::Session* sess = nb::inst_ptr<BochsCPU::Session>(self);
     nb::object value        = nb::find(sess->missing_page_handler);
     Py_VISIT(value.ptr());
@@ -33,7 +32,7 @@ bochscpu_tp_traverse(PyObject* self, visitproc visit, void* arg)
 int
 bochscpu_tp_clear(PyObject* self)
 {
-    dbg("in bochscpu_tp_clear");
+    dbg("clearing PF handler");
     BochsCPU::Session* sess    = nb::inst_ptr<BochsCPU::Session>(self);
     sess->missing_page_handler = nullptr;
     return 0;
@@ -203,87 +202,6 @@ NB_MODULE(bochscpu, m)
     // Exported native functions
     //
     {
-        m.def("bochscpu_cpu_new", &bochscpu_cpu_new, "id"_a, "Create a new CPU");
-        m.def("bochscpu_cpu_from", &bochscpu_cpu_from, "id"_a, "Get a CPU context from a given CPU ID");
-        m.def("bochscpu_cpu_forget", &bochscpu_cpu_forget, "cpu"_a);
-        m.def("bochscpu_cpu_delete", &bochscpu_cpu_delete, "cpu"_a);
-        m.def("bochscpu_cpu_set_mode", &bochscpu_cpu_set_mode, "cpu"_a);
-        m.def("bochscpu_cpu_stop", &bochscpu_cpu_stop, "cpu"_a, "Stop the execution");
-        m.def(
-            "bochscpu_cpu_state",
-            &bochscpu_cpu_state,
-            "cpu"_a,
-            "state"_a,
-            "Get the register state defined for the CPU");
-        m.def("bochscpu_cpu_set_state", &bochscpu_cpu_set_state, "cpu"_a, "state"_a, "Assign a state to the CPU");
-        m.def("bochscpu_cpu_set_state_no_flush", &bochscpu_cpu_set_state_no_flush, "cpu"_a, "state"_a);
-        m.def("bochscpu_cpu_set_exception", &bochscpu_cpu_set_exception, "cpu"_a, "vector"_a, "error"_a);
-        m.def("bochscpu_cpu_rax", &bochscpu_cpu_rax, "cpu"_a, "Get the rax register");
-        m.def("bochscpu_cpu_rcx", &bochscpu_cpu_rcx, "cpu"_a, "Get the rcx register");
-        m.def("bochscpu_cpu_rdx", &bochscpu_cpu_rdx, "cpu"_a, "Get the rdx register");
-        m.def("bochscpu_cpu_rbx", &bochscpu_cpu_rbx, "cpu"_a, "Get the rbx register");
-        m.def("bochscpu_cpu_rsp", &bochscpu_cpu_rsp, "cpu"_a, "Get the rsp register");
-        m.def("bochscpu_cpu_rbp", &bochscpu_cpu_rbp, "cpu"_a, "Get the rbp register");
-        m.def("bochscpu_cpu_rsi", &bochscpu_cpu_rsi, "cpu"_a, "Get the rsi register");
-        m.def("bochscpu_cpu_rdi", &bochscpu_cpu_rdi, "cpu"_a, "Get the rdi register");
-        m.def("bochscpu_cpu_r8", &bochscpu_cpu_r8, "cpu"_a, "Get the _r8 register");
-        m.def("bochscpu_cpu_r9", &bochscpu_cpu_r9, "cpu"_a, "Get the _r9 register");
-        m.def("bochscpu_cpu_r10", &bochscpu_cpu_r10, "cpu"_a, "Get the r10 register");
-        m.def("bochscpu_cpu_r11", &bochscpu_cpu_r11, "cpu"_a, "Get the r11 register");
-        m.def("bochscpu_cpu_r12", &bochscpu_cpu_r12, "cpu"_a, "Get the r12 register");
-        m.def("bochscpu_cpu_r13", &bochscpu_cpu_r13, "cpu"_a, "Get the r13 register");
-        m.def("bochscpu_cpu_r14", &bochscpu_cpu_r14, "cpu"_a, "Get the r14 register");
-        m.def("bochscpu_cpu_r15", &bochscpu_cpu_r15, "cpu"_a, "Get the r15 register");
-        m.def("bochscpu_cpu_rip", &bochscpu_cpu_rip, "cpu"_a, "Get the rip register");
-        m.def("bochscpu_cpu_rflags", &bochscpu_cpu_rflags, "cpu"_a);
-        m.def("bochscpu_cpu_set_rax", &bochscpu_cpu_set_rax, "cpu"_a, "value"_a, "Set the rax register");
-        m.def("bochscpu_cpu_set_rcx", &bochscpu_cpu_set_rcx, "cpu"_a, "value"_a, "Set the rcx register");
-        m.def("bochscpu_cpu_set_rdx", &bochscpu_cpu_set_rdx, "cpu"_a, "value"_a, "Set the rdx register");
-        m.def("bochscpu_cpu_set_rbx", &bochscpu_cpu_set_rbx, "cpu"_a, "value"_a, "Set the rbx register");
-        m.def("bochscpu_cpu_set_rsp", &bochscpu_cpu_set_rsp, "cpu"_a, "value"_a, "Set the rsp register");
-        m.def("bochscpu_cpu_set_rbp", &bochscpu_cpu_set_rbp, "cpu"_a, "value"_a, "Set the rbp register");
-        m.def("bochscpu_cpu_set_rsi", &bochscpu_cpu_set_rsi, "cpu"_a, "value"_a, "Set the rsi register");
-        m.def("bochscpu_cpu_set_rdi", &bochscpu_cpu_set_rdi, "cpu"_a, "value"_a, "Set the rdi register");
-        m.def("bochscpu_cpu_set_r8", &bochscpu_cpu_set_r8, "cpu"_a, "value"_a, "Set the _r8 register");
-        m.def("bochscpu_cpu_set_r9", &bochscpu_cpu_set_r9, "cpu"_a, "value"_a, "Set the _r9 register");
-        m.def("bochscpu_cpu_set_r10", &bochscpu_cpu_set_r10, "cpu"_a, "value"_a, "Set the r10 register");
-        m.def("bochscpu_cpu_set_r11", &bochscpu_cpu_set_r11, "cpu"_a, "value"_a, "Set the r11 register");
-        m.def("bochscpu_cpu_set_r12", &bochscpu_cpu_set_r12, "cpu"_a, "value"_a, "Set the r12 register");
-        m.def("bochscpu_cpu_set_r13", &bochscpu_cpu_set_r13, "cpu"_a, "value"_a, "Set the r13 register");
-        m.def("bochscpu_cpu_set_r14", &bochscpu_cpu_set_r14, "cpu"_a, "value"_a, "Set the r14 register");
-        m.def("bochscpu_cpu_set_r15", &bochscpu_cpu_set_r15, "cpu"_a, "value"_a, "Set the r15 register");
-        m.def("bochscpu_cpu_set_rip", &bochscpu_cpu_set_rip, "cpu"_a, "value"_a, "Set the rip register");
-        m.def("bochscpu_cpu_set_rflags", &bochscpu_cpu_set_rflags, "cpu"_a, "value"_a);
-        m.def("bochscpu_cpu_cs", &bochscpu_cpu_cs, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_ds", &bochscpu_cpu_ds, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_es", &bochscpu_cpu_es, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_fs", &bochscpu_cpu_fs, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_ss", &bochscpu_cpu_ss, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_gs", &bochscpu_cpu_gs, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_set_cs", &bochscpu_cpu_set_cs, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_set_ds", &bochscpu_cpu_set_ds, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_set_es", &bochscpu_cpu_set_es, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_set_ss", &bochscpu_cpu_set_ss, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_set_fs", &bochscpu_cpu_set_fs, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_set_gs", &bochscpu_cpu_set_gs, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_set_ldtr", &bochscpu_cpu_set_ldtr, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_ldtr", &bochscpu_cpu_ldtr, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_tr", &bochscpu_cpu_tr, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_set_tr", &bochscpu_cpu_set_tr, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_gdtr", &bochscpu_cpu_gdtr, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_set_gdtr", &bochscpu_cpu_set_gdtr, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_idtr", &bochscpu_cpu_idtr, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_set_idtr", &bochscpu_cpu_set_idtr, "cpu"_a, "segment"_a);
-        m.def("bochscpu_cpu_set_cr2", &bochscpu_cpu_set_cr2, "cpu"_a, "value"_a);
-        m.def("bochscpu_cpu_cr2", &bochscpu_cpu_cr2, "cpu"_a);
-        m.def("bochscpu_cpu_cr3", &bochscpu_cpu_cr3, "cpu"_a);
-        m.def("bochscpu_cpu_set_cr3", &bochscpu_cpu_set_cr3, "cpu"_a, "value"_a);
-        m.def("bochscpu_cpu_zmm", &bochscpu_cpu_zmm, "cpu"_a, "idx"_a, "zmm"_a);
-        m.def("bochscpu_cpu_set_zmm", &bochscpu_cpu_set_zmm, "cpu"_a, "idx"_a, "zmm"_a);
-        m.def("bochscpu_instr_bx_opcode", &bochscpu_instr_bx_opcode, "cpu"_a);
-        m.def("bochscpu_instr_imm16", &bochscpu_instr_imm16, "cpu"_a);
-        m.def("bochscpu_instr_imm32", &bochscpu_instr_imm32, "cpu"_a);
-        m.def("bochscpu_instr_imm64", &bochscpu_instr_imm64, "cpu"_a);
         m.def(
             "bochscpu_mem_page_insert",
             [](uint64_t gpa, uintptr_t hva)
@@ -345,14 +263,19 @@ NB_MODULE(bochscpu, m)
             "sz"_a,
             "Read from GVA");
         m.def("bochscpu_log_set_level", &bochscpu_log_set_level, "level"_a);
+        m.def("instr_bx_opcode", &bochscpu_instr_bx_opcode, "p"_a);
+        m.def("instr_imm16", &bochscpu_instr_imm16, "p"_a);
+        m.def("instr_imm32", &bochscpu_instr_imm32, "p"_a);
+        m.def("instr_imm64", &bochscpu_instr_imm64, "p"_a);
 
 
         nb::class_<BochsCPU::Session>(m, "session", nb::type_slots(slots))
             .def(nb::init<>())
             .def_rw("missing_page_handler", &BochsCPU::Session::missing_page_handler, "Set the missing page callback")
+            .def_ro("cpu", &BochsCPU::Session::cpu, "Get the CPU associated to the session")
             .def(
                 "run",
-                [](BochsCPU::Session& s, bochscpu_cpu_t p, std::vector<BochsCPU::Hook>& h)
+                [](BochsCPU::Session& s, std::vector<BochsCPU::Hook>& h)
                 {
                     if ( h.size() > (MAX_HOOKS - 1) )
                         throw std::runtime_error("Too many hooks");
@@ -360,8 +283,9 @@ NB_MODULE(bochscpu, m)
                     bochscpu_hooks_t hooks[MAX_HOOKS] {};
                     bochscpu_hooks_t* hooks2[MAX_HOOKS] {};
 
-                    for ( int i = 0; auto& _h : h )
+                    for ( int i = 0; BochsCPU::Hook & _h : h )
                     {
+                        _h.ctx                          = (void*)&s;
                         hooks[i].ctx                    = (void*)&_h;
                         hooks[i].before_execution       = BochsCPU::Callbacks::before_execution_cb;
                         hooks[i].after_execution        = BochsCPU::Callbacks::after_execution_cb;
@@ -392,9 +316,15 @@ NB_MODULE(bochscpu, m)
                         i++;
                     }
 
-                    ::bochscpu_cpu_run(p, hooks2);
+                    ::bochscpu_cpu_run(&s.cpu, hooks2);
                 },
-                "Start the execution with a set of hooks");
-        ;
+                "Start the execution with a set of hooks")
+            .def(
+                "stop",
+                [](BochsCPU::Session& s)
+                {
+                    ::bochscpu_cpu_stop(&s.cpu);
+                },
+                "Stop the execution");
     }
 }

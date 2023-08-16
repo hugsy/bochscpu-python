@@ -92,7 +92,6 @@ rip={state.rip:016x} rsp={state.rsp:016x} rbp={state.rbp:016x}
  r8={ state.r8:016x}  r9={ state.r9:016x} r10={state.r10:016x}
 r11={state.r11:016x} r12={state.r12:016x} r13={state.r13:016x}
 r14={state.r14:016x} r15={state.r15:016x} efl={state.rflags:016x}
-
 cs={int(state.cs):04x}  ss={int(state.ss):04x}  ds={int(state.ds):04x}  es={int(state.es):04x}  fs={int(state.fs):04x}  gs={int(state.gs):04x}
 """
     )
@@ -114,19 +113,26 @@ def missing_page_cb(gpa):
     raise Exception(f"missing_page_cb({gpa=:#x})")
 
 
-def exception_cb(ctx, cpu_id, vector, error_code):
+def exception_cb(sess: bochscpu.session, cpu_id: int, vector: int, error_code: int):
     dbg(f"received exception({vector=:d}, {error_code=:d}) from cpu#{cpu_id}")
-    bochscpu.bochscpu_cpu_stop(bochscpu.bochscpu_cpu_from(cpu_id))
+    sess.stop()
 
 
 def lin_access_cb(
-    _: Any, cpu_id: int, lin: int, phy: int, len: int, rw: int, access: int
+    sess: bochscpu.session,
+    cpu_id: int,
+    lin: int,
+    phy: int,
+    len: int,
+    rw: int,
+    access: int,
 ):
     global stats
+    # dbg(f"{lin=:#x} {phy=:#x} {len=:d} {rw=:d} {access=:d}")
     stats.mem_access[access] += 1
 
 
-def after_execution_cb(ctx: Any, cpu_id: int, insn: int):
+def after_execution_cb(sess: bochscpu.session, cpu_id: int, insn: int):
     global stats
     stats.insn_nb += 1
 
@@ -139,7 +145,7 @@ def emulate(code: bytes):
     # Setup the PF handler very early to let Python handle it, rather than rust panicking
     #
     sess = bochscpu.session()
-    dbg("setting pf handler")
+    dbg("registering our own missing page handler")
     sess.missing_page_handler = missing_page_cb
 
     #
@@ -152,11 +158,9 @@ def emulate(code: bytes):
     cr0.NE = True
     cr0.ET = True
     cr0.PE = True
-    dbg(f"{int(cr0)=:#016x}")
 
     cr4 = bochscpu.cpu.ControlRegister()
     cr4.PAE = True  # required for long mode
-    dbg(f"{int(cr4)=:#016x}")
 
     #
     # Manually craft the guest virtual & physical memory layout into a pagetable
@@ -207,8 +211,8 @@ def emulate(code: bytes):
     #
     # Create a state and load it into a new CPU
     #
-    cpu = bochscpu.bochscpu_cpu_new(0)
-    dbg("created cpu#0")
+    cpu = sess.cpu
+    dbg(f"created cpu#{cpu.id}")
 
     state = bochscpu.State()
     state.rsp = stack_gva + PAGE_SIZE // 2
@@ -235,9 +239,10 @@ def emulate(code: bytes):
     state.es = ds
     state.fs = ds
     state.gs = ds
-    bochscpu.bochscpu_cpu_set_state(cpu, state)
+    sess.cpu.state = state
     dbg("loaded state for cpu#0")
-    # dump_registers(state)
+    dbg("dumping start state")
+    dump_registers(state)
 
     hooks = []
     hook = bochscpu.Hook()
@@ -249,9 +254,12 @@ def emulate(code: bytes):
 
     dbg("starting the vm...")
     t1 = time.time_ns()
-    sess.run(cpu, hooks)
+    sess.run(hooks)
     t2 = time.time_ns()
     dbg(f"vm stopped, execution: {stats.insn_nb} insns in {t2-t1}ns")
+    dbg(
+        f"mem accesses: read={stats.mem_access[0]} write={stats.mem_access[1]} execute={stats.mem_access[2]}"
+    )
 
     if stats.insn_nb < len(INSNS):
         dbg(f"last insn executed: {INSNS[stats.insn_nb]}")
@@ -259,10 +267,9 @@ def emulate(code: bytes):
         dbg(f"next insn: {INSNS[stats.insn_nb+1]}")
 
     dbg("reading new state")
-    new_state = bochscpu.State()
-    bochscpu.bochscpu_cpu_state(cpu, new_state)
+    new_state = sess.cpu.state
+    dbg("dumping final state")
     dump_registers(new_state)
-    bochscpu.bochscpu_cpu_delete(cpu)
     return
 
 
@@ -302,5 +309,4 @@ loop:
     assert isinstance(code, list)
     code = bytearray(code)
     INSNS = [i for i in cs.disasm(code, 0)]
-    # dbg(str(INSNS))
     emulate(code)

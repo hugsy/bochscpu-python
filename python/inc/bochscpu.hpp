@@ -8,7 +8,7 @@
 
 #include "bochscpu/bochscpu.hpp"
 
-#define DEBUG
+// #define DEBUG
 
 #ifdef DEBUG
 #define GEN_FMT "[%s::%d] "
@@ -46,34 +46,36 @@
 namespace BochsCPU
 {
 
+struct Session;
+
 struct Hook
 {
     void* ctx {nullptr};
-    std::function<void(context_t*, uint32_t, void*)> before_execution;
-    std::function<void(context_t*, uint32_t, void*)> after_execution;
-    std::function<void(context_t*, uint32_t, unsigned int)> reset;
-    std::function<void(context_t*, uint32_t)> hlt;
-    std::function<void(context_t*, uint32_t, uint64_t, uintptr_t, uint32_t)> mwait;
-    std::function<void(context_t*, uint32_t, uint64_t, uint64_t)> cnear_branch_taken;
-    std::function<void(context_t*, uint32_t, uint64_t, uint64_t)> cnear_branch_not_taken;
-    std::function<void(context_t*, uint32_t, unsigned, uint64_t, uint64_t)> ucnear_branch;
-    std::function<void(context_t*, uint32_t, uint32_t, uint16_t, uint64_t, uint16_t, uint64_t)> far_branch;
-    std::function<void(context_t*, uint32_t, uint32_t, uint64_t)> vmexit;
-    std::function<void(context_t*, uint32_t, unsigned)> interrupt;
-    std::function<void(context_t*, uint32_t, unsigned, uint16_t, uint64_t)> hw_interrupt;
-    std::function<void(context_t*, uint32_t, uint64_t, uint64_t)> clflush;
-    std::function<void(context_t*, uint32_t, unsigned, uint64_t)> tlb_cntrl;
-    std::function<void(context_t*, uint32_t, unsigned)> cache_cntrl;
-    std::function<void(context_t*, uint32_t, unsigned, unsigned, uint64_t)> prefetch_hint;
-    std::function<void(context_t*, uint32_t, unsigned, uint64_t)> wrmsr;
-    std::function<void(context_t*, uint32_t, void*)> repeat_iteration;
-    std::function<void(context_t*, uint32_t, uint64_t, uint64_t, uintptr_t, uint32_t, uint32_t)> lin_access;
-    std::function<void(context_t*, uint32_t, uint64_t, uint64_t, uintptr_t, unsigned)> phy_access;
-    std::function<void(context_t*, uint16_t, uintptr_t)> inp;
-    std::function<void(context_t*, uint16_t, uintptr_t, unsigned)> inp2;
-    std::function<void(context_t*, uint16_t, uintptr_t, unsigned)> outp;
-    std::function<void(context_t*, uint32_t, void*, uint8_t*, uintptr_t, bool, bool)> opcode;
-    std::function<void(context_t*, uint32_t, unsigned, unsigned)> exception;
+    std::function<void(Session*, uint32_t, void*)> before_execution;
+    std::function<void(Session*, uint32_t, void*)> after_execution;
+    std::function<void(Session*, uint32_t, unsigned int)> reset;
+    std::function<void(Session*, uint32_t)> hlt;
+    std::function<void(Session*, uint32_t, uint64_t, uintptr_t, uint32_t)> mwait;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t)> cnear_branch_taken;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t)> cnear_branch_not_taken;
+    std::function<void(Session*, uint32_t, unsigned, uint64_t, uint64_t)> ucnear_branch;
+    std::function<void(Session*, uint32_t, uint32_t, uint16_t, uint64_t, uint16_t, uint64_t)> far_branch;
+    std::function<void(Session*, uint32_t, uint32_t, uint64_t)> vmexit;
+    std::function<void(Session*, uint32_t, unsigned)> interrupt;
+    std::function<void(Session*, uint32_t, unsigned, uint16_t, uint64_t)> hw_interrupt;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t)> clflush;
+    std::function<void(Session*, uint32_t, unsigned, uint64_t)> tlb_cntrl;
+    std::function<void(Session*, uint32_t, unsigned)> cache_cntrl;
+    std::function<void(Session*, uint32_t, unsigned, unsigned, uint64_t)> prefetch_hint;
+    std::function<void(Session*, uint32_t, unsigned, uint64_t)> wrmsr;
+    std::function<void(Session*, uint32_t, void*)> repeat_iteration;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t, uintptr_t, uint32_t, uint32_t)> lin_access;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t, uintptr_t, unsigned)> phy_access;
+    std::function<void(Session*, uint16_t, uintptr_t)> inp;
+    std::function<void(Session*, uint16_t, uintptr_t, unsigned)> inp2;
+    std::function<void(Session*, uint16_t, uintptr_t, unsigned)> outp;
+    std::function<void(Session*, uint32_t, void*, uint8_t*, uintptr_t, bool, bool)> opcode;
+    std::function<void(Session*, uint32_t, unsigned, unsigned)> exception;
 };
 
 
@@ -202,6 +204,28 @@ enum class ControlRegisterFlag : uint64_t
     VME        = 0,  // Virtual-8086 Mode Extensions R/W
 };
 
+
+static uint32_t g_sessionId {0};
+
+struct CPU
+{
+    CPU()
+    {
+        this->id  = g_sessionId++;
+        this->cpu = ::bochscpu_cpu_new(this->id);
+        if ( !this->cpu )
+            throw std::runtime_error("Invalid CPU ID");
+        dbg("Created CPU#%lu", this->id);
+    }
+
+    ~CPU()
+    {
+        ::bochscpu_cpu_delete(this->cpu);
+    }
+
+    uint32_t id {0};
+    bochscpu_cpu_t cpu {};
+};
 } // namespace Cpu
 
 
@@ -359,8 +383,6 @@ private:
     std::vector<uint64_t> m_AllocatedPages {};
 };
 
-} // namespace Memory
-
 static inline std::unique_ptr<std::function<void(uint64_t)>> missing_page_handler;
 
 static void
@@ -369,24 +391,26 @@ missing_page_cb(uint64_t gpa)
     dbg("missing gpa=%#llx", gpa);
     (*missing_page_handler)(gpa);
 }
+} // namespace Memory
+
 
 struct Session
 {
-    Session()
+    Session() : cpu()
     {
-        ::bochscpu_mem_missing_page(BochsCPU::missing_page_cb);
-        BochsCPU::missing_page_handler = std::unique_ptr<std::function<void(uint64_t)>>(&this->missing_page_handler);
-        // cpu                            = ::bochscpu_cpu_new(0);
+        ::bochscpu_mem_missing_page(BochsCPU::Memory::missing_page_cb);
+        BochsCPU::Memory::missing_page_handler =
+            std::unique_ptr<std::function<void(uint64_t)>>(&this->missing_page_handler);
     }
 
     ~Session()
     {
-        // ::bochscpu_cpu_delete(cpu);
-        BochsCPU::missing_page_handler.release();
+        BochsCPU::Memory::missing_page_handler.release();
     }
 
     std::function<void(uint64_t)> missing_page_handler;
-    bochscpu_cpu_t cpu {};
+    BochsCPU::Cpu::CPU cpu {};
 };
+
 
 } // namespace BochsCPU
