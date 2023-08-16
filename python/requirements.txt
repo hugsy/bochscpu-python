@@ -1,4 +1,5 @@
+black
 setuptools
 wheel
 nanobind
-black
+nanobind-stubgen
