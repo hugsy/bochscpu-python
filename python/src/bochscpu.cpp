@@ -38,7 +38,6 @@ bochscpu_tp_clear(PyObject* self)
     return 0;
 }
 
-// Slot data structure referencing the above two functions
 PyType_Slot slots[] = {
     {Py_tp_traverse, (void*)bochscpu_tp_traverse},
     {Py_tp_clear, (void*)bochscpu_tp_clear},

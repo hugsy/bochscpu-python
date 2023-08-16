@@ -33,8 +33,8 @@ else()
     target_link_libraries(bochscpu PRIVATE bochscpu_ffi)
 endif()
 
-install(TARGETS bochscpu LIBRARY DESTINATION bochscpu)
+install(TARGETS bochscpu LIBRARY DESTINATION .)
 
 if(MSVC)
-    install(FILES $<TARGET_PDB_FILE:bochscpu> DESTINATION bochscpu OPTIONAL)
+    install(FILES $<TARGET_PDB_FILE:bochscpu> DESTINATION . OPTIONAL)
 endif(MSVC)

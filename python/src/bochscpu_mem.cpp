@@ -22,6 +22,7 @@ bochscpu_memory_module(nb::module_& base_module)
     auto m = base_module.def_submodule("memory", "Memory module");
 
     m.def("PageSize", &BochsCPU::Memory::PageSize);
+    m.def("AlignPageToPage", &BochsCPU::Memory::AlignPageToPage);
 
     nb::class_<BochsCPU::Memory::PageMapLevel4Table>(m, "PageMapLevel4Table")
         .def(nb::init<>())
@@ -45,6 +46,28 @@ uint64_t
 AlignPageToPage(uint64_t va)
 {
     return va & ~0xfff;
+}
+
+
+uint64_t
+AllocatePage()
+{
+#if defined(_WIN32)
+    return (uint64_t)::VirtualAlloc(nullptr, Memory::PageSize(), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+#else
+    return (uint64_t)::mmap(nullptr, Memory::PageSize(), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#endif // _WIN32
+}
+
+
+bool
+FreePage(uint64_t addr)
+{
+#if defined(_WIN32)
+    return ::VirtualFree((LPVOID)addr, 0, MEM_RELEASE) == TRUE;
+#else
+    return ::munmap((void*)addr, Memory::PageSize()) == 0;
+#endif // _WIN32
 }
 
 
@@ -155,9 +178,9 @@ PageMapLevel4Table::Commit(uint64_t BasePA)
     uint64_t CurrentPA {BasePA};
 
     // pair<HVA, GPA>
-    auto AllocatePage = [this, PageSize, &CurrentPA]() -> std::pair<uint64_t, uint64_t>
+    auto AllocatePageAndPA = [this, PageSize, &CurrentPA]() -> std::pair<uint64_t, uint64_t>
     {
-        auto h = BochsCPU::AllocatePage();
+        auto h = BochsCPU::Memory::AllocatePage();
         if ( !h )
             throw std::bad_alloc();
 
@@ -172,7 +195,7 @@ PageMapLevel4Table::Commit(uint64_t BasePA)
     };
 
     const size_t view_size = PageSize / sizeof(uint64_t);
-    const auto mapped_pml4 = AllocatePage();
+    const auto mapped_pml4 = AllocatePageAndPA();
     std::span<uint64_t> mapped_pml4_view {(uint64_t*)mapped_pml4.first, view_size};
 
     for ( int i = -1; auto const& pdpt : this->Entries )
@@ -185,7 +208,7 @@ PageMapLevel4Table::Commit(uint64_t BasePA)
         if ( !pdpt->Flags.test((int)PageDirectoryPointerTable::Flag::Present) )
             continue;
 
-        auto mapped_pdpt = AllocatePage();
+        auto mapped_pdpt = AllocatePageAndPA();
         std::span<uint64_t> mapped_pdpt_view {(uint64_t*)mapped_pdpt.first, view_size};
 
         for ( int j = -1; auto const& pd : pdpt->Entries )
@@ -198,7 +221,7 @@ PageMapLevel4Table::Commit(uint64_t BasePA)
             if ( !pd->Flags.test((int)PageDirectory::Flag::Present) )
                 continue;
 
-            auto mapped_pd = AllocatePage();
+            auto mapped_pd = AllocatePageAndPA();
             std::span<uint64_t> mapped_pd_view {(uint64_t*)mapped_pd.first, view_size};
 
             for ( int k = -1; auto const& pt : pd->Entries )
@@ -211,7 +234,7 @@ PageMapLevel4Table::Commit(uint64_t BasePA)
                 if ( !pt->Flags.test((int)PageTable::Flag::Present) )
                     continue;
 
-                auto mapped_pt = AllocatePage();
+                auto mapped_pt = AllocatePageAndPA();
                 std::span<uint64_t> mapped_pt_view {(uint64_t*)mapped_pt.first, view_size};
 
                 for ( int l = -1; auto const& page : pt->Entries )
