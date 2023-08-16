@@ -71,7 +71,7 @@ jobs:
         #   - {os: macos-latest, generator: clang, arch: x64, config: Release, py-arch: x64}
         #   - {os: macos-latest, generator: clang, arch: x64, config: Debug, py-arch: x64}
     runs-on: ${{ matrix.variant.os }}
-    name: ${{ matrix.variant.os }} / ${{ matrix.variant.config }} / ${{ matrix.python-version }} / ${{ matrix.variant.arch }}
+    name: ${{ matrix.variant.os }} / ${{ matrix.python-version }} / ${{ matrix.variant.config }}
     env:
       NB_CPU: 1
       CMAKE_FLAGS: ""
@@ -146,7 +146,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: bochscpu-python-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}.${{ matrix.variant.config }}
+        name: bochscpu-py${{ matrix.python-version }}-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}
         path: |
           artifact/
           wheel/
