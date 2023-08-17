@@ -14,8 +14,7 @@ Python bindings for [@yrp](https://github.com/yrp604/)'s [BochsCPU](https://gith
  * You can also generate a `.whl`:
 
 ```
-mkdir wheel
-python -m pip wheel . -w .\wheel\
+python -m pip wheel . 
 ```
 
 ## Install
@@ -29,14 +28,14 @@ python -m pip install .
 Or without cloning
 
 ```
-python -m pip install git+https://github.com/hugsy/bochscpu-python.git#egg=bochscpu
+python -m pip install git+https://github.com/hugsy/bochscpu-python.git#egg=bochscpu-python
 ```
 
 
 ### Via PyPI
 
 ```
-python -m pip install bochscpu
+python -m pip install bochscpu-python
 ```
 
 
@@ -51,4 +50,6 @@ python -m pip install wheel/bochscpu-$version-$os-$arch.whl
 
 ## Usage
 
-Just import the `bochscpu` module
+Just import the `bochscpu` module and let the fun begin!
+
+Enjoy 🍻

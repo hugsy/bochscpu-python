@@ -1,12 +1,12 @@
+import ctypes
 import dataclasses
+import platform
 import struct
+import time
+
 import capstone
 import keystone
 
-from typing import Any
-
-import ctypes
-import time
 import bochscpu
 
 DEBUG = True
@@ -27,7 +27,32 @@ def dbg(x: str):
         print(f"[Py] {x}")
 
 
+def mmap(sz: int = PAGE_SIZE, perm: str = "rw"):
+    PROT_READ = 0x1
+    PROT_WRITE = 0x2
+    PROT_EXEC = 0x4
+    MAP_PRIVATE = 0x2
+    MAP_ANONYMOUS = 0x20
+    libc = ctypes.CDLL("libc.so.6")
+    mmap = libc.mmap
+    mmap.restype = ctypes.c_void_p
+    mmap.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_long]
+    flags = 0
+    match perm:
+        case "ro":
+            flags = PROT_READ
+        case "rw":
+            flags = PROT_READ | PROT_WRITE
+        case "rwx":
+            flags = PROT_READ | PROT_WRITE | PROT_EXECUTE
+        case _:
+            raise ValueError
+    return mmap(-1, sz, flags, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)
+
+
 def VirtualAlloc(sz: int = PAGE_SIZE, perm: str = "rw"):
+    if platform.system() == "Linux":
+        return mmap(sz, perm)
     MEM_COMMIT = 0x1000
     MEM_RESERVE = 0x2000
     PAGE_NOACCESS = 0x01
@@ -293,7 +318,7 @@ loop:
     push rbx
     push rax
 
-    cmp rcx, 0xffffff
+    cmp rcx, 0xfffff
     jne loop
 
     nop
