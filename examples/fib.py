@@ -1,5 +1,6 @@
 import ctypes
 import dataclasses
+import platform
 import struct
 import time
 
