@@ -1,6 +1,6 @@
 name: Builds
 
-on: [push]
+on: [push, pull_request]
 
 
 jobs:
@@ -11,7 +11,7 @@ jobs:
         variant:
           - {os: windows-latest, arch: x64}
           - {os: ubuntu-latest, arch: x64}
-        #   - {os: macos-latest, arch: x64}
+        #   - {os: macos-latest, arch: x64} # doesn't build, but low prio
     runs-on: ${{ matrix.variant.os }}
     name: ${{ matrix.variant.os }} / ${{ matrix.variant.arch }}
     steps:
@@ -150,3 +150,18 @@ jobs:
         path: |
           artifact/
           wheel/
+
+
+  publish:
+    needs: bindings
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    name: Upload release to PyPI
+    environment:
+      name: pypi
+      url: https://pypi.org/p/bochscpu-python
+    permissions:
+      id-token: write
+    steps:
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
