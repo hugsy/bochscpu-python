@@ -3,8 +3,8 @@ requires = ["scikit-build-core >=0.4.3", "nanobind >=1.3.2"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "bochscpu"
-version = "0.1.1"
+name = "bochscpu-python"
+version = "0.1.3"
 description = "Python bindings for BochsCPU."
 readme = "./README.md"
 license.file = "./LICENSE"

@@ -151,9 +151,15 @@ jobs:
           artifact/
           wheel/
 
-
   publish:
     needs: bindings
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+        variant:
+          - {os: windows-latest, arch: x64, config: RelWithDebInfo, py-arch: x64}
+          - {os: ubuntu-latest, arch: x64, config: RelWithDebInfo, py-arch: x64}
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
     name: Upload release to PyPI
@@ -163,8 +169,14 @@ jobs:
     permissions:
       id-token: write
     steps:
+      - name: Download artifact for ${{ matrix.variant.os }}/${{ matrix.python-version }}/${{ matrix.variant.config }}
+        uses: actions/download-artifact@v3
+        id: download_wheels
+        with:
+          name: bochscpu-py${{ matrix.python-version }}-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}
+          path: wheel
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: wheel/
+          packages-dir: ${{ steps.download_wheels.outputs.download-path }}/wheel/
           print-hash: true
