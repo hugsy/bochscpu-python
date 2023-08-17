@@ -1,7 +1,3 @@
-import sys
-
-sys.path.append("C:\cmake/bochscpu-py/install-win32/x64/bindings/python")
-
 import dataclasses
 import struct
 import capstone
@@ -71,7 +67,7 @@ def dump_page_table(addr: int, level: int = 0):
 
     print(f"Dumping {level_str[level]} @ {addr:#x}")
 
-    for i in range(0, bochscpu.memory.PageSize(), 8):
+    for i in range(0, PAGE_SIZE, 8):
         data = bytes(bochscpu.bochscpu_mem_phy_read(addr + i, 8))
         entry = struct.unpack("<Q", data[:8])[0]
         flags = entry & 0xFFF
@@ -125,7 +121,7 @@ def lin_access_cb(
     phy: int,
     len: int,
     rw: int,
-    access: int,
+    access: bochscpu.memory.AccessType,
 ):
     global stats
     # dbg(f"{lin=:#x} {phy=:#x} {len=:d} {rw=:d} {access=:d}")

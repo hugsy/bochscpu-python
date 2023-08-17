@@ -25,11 +25,16 @@ nanobind_add_module(
 
 target_include_directories(bochscpu PRIVATE ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/python/inc)
 target_link_directories(bochscpu PRIVATE ${CMAKE_SOURCE_DIR}/bochscpu/lib/${CMAKE_BUILD_TYPE})
-target_link_libraries(bochscpu
-    PRIVATE
-    Userenv.lib Bcrypt.lib Ws2_32.lib kernel32.lib ntdll.lib
-    bochscpu_ffi.lib
-)
+target_link_libraries(bochscpu PRIVATE)
 
-install(TARGETS bochscpu LIBRARY DESTINATION bindings/python)
-install(FILES $<TARGET_PDB_FILE:bochscpu> DESTINATION bindings/python OPTIONAL)
+if(MSVC)
+    target_link_libraries(bochscpu PRIVATE Userenv.lib Bcrypt.lib Ws2_32.lib kernel32.lib ntdll.lib bochscpu_ffi.lib)
+else()
+    target_link_libraries(bochscpu PRIVATE bochscpu_ffi)
+endif()
+
+install(TARGETS bochscpu LIBRARY DESTINATION .)
+
+if(MSVC)
+    install(FILES $<TARGET_PDB_FILE:bochscpu> DESTINATION . OPTIONAL)
+endif(MSVC)

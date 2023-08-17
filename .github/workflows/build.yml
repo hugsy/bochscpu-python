@@ -1,0 +1,167 @@
+name: Builds
+
+on: [push, pull_request]
+
+
+jobs:
+  bochscpu:
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - {os: windows-latest, arch: x64}
+          - {os: ubuntu-latest, arch: x64}
+        #   - {os: macos-latest, arch: x64} # doesn't build, but low prio
+    runs-on: ${{ matrix.variant.os }}
+    name: ${{ matrix.variant.os }} / ${{ matrix.variant.arch }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Cache Artifacts
+      id: cache-artifacts
+      uses: actions/cache@v3
+      with:
+        path: artifact
+        key: bochscpu-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-artifact-win-lin
+
+    - uses: microsoft/setup-msbuild@v1
+      if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'windows-latest'
+
+    - uses: ilammy/msvc-dev-cmd@v1
+      if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'windows-latest'
+
+    - name: Build BochsCPU (Windows)
+      if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'windows-latest'
+      run: |
+        .\.github\build-bochscpu.bat
+        mkdir artifact; mkdir artifact/release; mkdir artifact/debug; mkdir artifact/relwithdebinfo
+        cp -Verbose bxbuild/bochscpu-ffi/target/release/*.lib artifact/release/
+        cp -Verbose bxbuild/bochscpu-ffi/target/debug/*.lib artifact/debug/
+        cp -Verbose bxbuild/bochscpu-ffi/target/debug/*.lib artifact/relwithdebinfo/
+
+    - name: Build BochsCPU (Linux & MacOS)
+      if: steps.cache-artifacts.outputs.cache-hit != 'true' && (matrix.variant.os == 'macos-latest' || matrix.variant.os == 'ubuntu-latest')
+      run: |
+        chmod +x .github/build-bochscpu.sh; .github/build-bochscpu.sh
+        mkdir artifact artifact/Release artifact/Debug artifact/RelWithDebInfo
+        cp -v bxbuild/bochscpu-ffi/target/release/lib*.a artifact/Release/
+        cp -v bxbuild/bochscpu-ffi/target/debug/lib*.a artifact/Debug/
+        cp -v bxbuild/bochscpu-ffi/target/debug/lib*.a artifact/RelWithDebInfo/
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}
+        path: artifact
+
+
+  bindings:
+    needs: bochscpu
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+        variant:
+          - {os: windows-latest, generator: msvc, arch: x64, config: RelWithDebInfo, py-arch: x64}
+        #   - {os: windows-latest, generator: msvc, arch: x64, config: Debug, py-arch: x64}
+        #   - {os: windows-latest, generator: msvc, arch: arm64, config: RelWithDebInfo, py-arch: x64} # Unsupported (see https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json)
+          - {os: ubuntu-latest, generator: gcc, arch: x64, config: RelWithDebInfo, py-arch: x64}
+        #   - {os: ubuntu-latest, generator: gcc, arch: x64, config: Debug, py-arch: x64}
+        #   - {os: macos-latest, generator: clang, arch: x64, config: Release, py-arch: x64}
+        #   - {os: macos-latest, generator: clang, arch: x64, config: Debug, py-arch: x64}
+    runs-on: ${{ matrix.variant.os }}
+    name: ${{ matrix.variant.os }} / ${{ matrix.python-version }} / ${{ matrix.variant.config }}
+    env:
+      NB_CPU: 1
+      CMAKE_FLAGS: ""
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Download BochsCPU libs
+      uses: actions/download-artifact@v3
+      id: download_artifact
+      with:
+        name: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}
+        path: bochscpu-artifact
+
+    - name: Setup BochsCPU libs
+      run: |
+        mv ${{steps.download_artifact.outputs.download-path}}/* bochscpu/lib/
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: ${{ matrix.variant.py-arch }}
+
+    - name: Install Python pre-requisites
+      run: |
+        python -m pip install --user --upgrade -r python/requirements.txt
+
+    - name: Environment Setup (Windows)
+      if: matrix.variant.os == 'windows-latest'
+      run: |
+        echo "NB_CPU=$env:NUMBER_OF_PROCESSORS" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "CMAKE_ARCH='-A ${{ matrix.variant.arch }}'" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        Import-Module .\.github\Invoke-VisualStudio.ps1
+        Invoke-VisualStudio2022${{ matrix.variant.arch }}
+
+    - name: Environment Setup (Linux)
+      if: matrix.variant.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get -y update
+        echo "NB_CPU=$(grep -c ^processor /proc/cpuinfo)" >> $GITHUB_ENV
+
+    - name: Environment Setup (Linux/GCC)
+      if: matrix.variant.os == 'ubuntu-latest' && matrix.variant.generator == 'gcc'
+      run: |
+        sudo apt install -y g++ ninja-build
+        echo CC=gcc >> $GITHUB_ENV
+        echo CXX=g++ >> $GITHUB_ENV
+
+    - name: Environment Setup (Linux/CLang)
+      if: matrix.variant.os == 'ubuntu-latest' && matrix.variant.generator == 'clang'
+      run: |
+        sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+        echo CC=clang >> $GITHUB_ENV
+        echo CXX=clang++ >> $GITHUB_ENV
+
+    - name: Environment Setup (MacOS)
+      if: matrix.variant.os == 'macos-latest'
+      run: |
+        echo NB_CPU=$(sysctl -n hw.ncpu) >> $GITHUB_ENV
+
+    - name: Build PYD and WHL
+      run: |
+        mkdir build
+        mkdir artifact
+        mkdir wheel
+        cmake -S . -B ./build ${{ env.CMAKE_FLAGS }}
+        cmake --build ./build --verbose --config ${{ matrix.variant.config }} --parallel ${{ env.NB_CPU }}
+        cmake --install ./build --verbose --config ${{ matrix.variant.config }} --prefix ./artifact
+        python -m pip wheel . -w ./wheel
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: bochscpu-py${{ matrix.python-version }}-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}
+        path: |
+          artifact/
+          wheel/
+
+
+  publish:
+    needs: bindings
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    name: Upload release to PyPI
+    environment:
+      name: pypi
+      url: https://pypi.org/p/bochscpu-python
+    permissions:
+      id-token: write
+    steps:
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

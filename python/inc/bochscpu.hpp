@@ -6,6 +6,16 @@
 #include <utility>
 #include <vector>
 
+#if defined(_WIN32)
+#include <windows.h>
+#elif defined(linux) || defined(__linux)
+#include <sys/mman.h>
+#elif defined(__APPLE__)
+#include <sys/mman.h>
+#else
+#error Not supported
+#endif // _WIN32
+
 #include "bochscpu/bochscpu.hpp"
 
 // #define DEBUG
@@ -232,11 +242,24 @@ struct CPU
 namespace Memory
 {
 
+enum class Access : int
+{
+    Read    = 0,
+    Write   = 1,
+    Execute = 2,
+};
+
 uintptr_t
 PageSize();
 
 uint64_t
-AlignPageToPage(uint64_t va);
+AlignAddressToPage(uint64_t va);
+
+uint64_t
+AllocatePage();
+
+bool
+FreePage(uint64_t addr);
 
 
 //

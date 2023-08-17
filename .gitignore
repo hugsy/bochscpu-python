@@ -34,4 +34,5 @@
 build
 wheel
 .vscode
-bochscpu/lib
+bochscpu/lib/*
+!bochscpu/lib/README.md
