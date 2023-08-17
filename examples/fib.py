@@ -318,7 +318,7 @@ loop:
     push rbx
     push rax
 
-    cmp rcx, 0xffffff
+    cmp rcx, 0xfffff
     jne loop
 
     nop
