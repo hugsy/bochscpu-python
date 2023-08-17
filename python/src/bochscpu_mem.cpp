@@ -21,8 +21,13 @@ bochscpu_memory_module(nb::module_& base_module)
 {
     auto m = base_module.def_submodule("memory", "Memory module");
 
+    nb::enum_<BochsCPU::Memory::Access>(m, "AccessType")
+        .value("Read", BochsCPU::Memory::Access::Read)
+        .value("Write", BochsCPU::Memory::Access::Write)
+        .value("Execute", BochsCPU::Memory::Access::Execute);
+
     m.def("PageSize", &BochsCPU::Memory::PageSize);
-    m.def("AlignPageToPage", &BochsCPU::Memory::AlignPageToPage);
+    m.def("AlignAddressToPage", &BochsCPU::Memory::AlignAddressToPage);
 
     nb::class_<BochsCPU::Memory::PageMapLevel4Table>(m, "PageMapLevel4Table")
         .def(nb::init<>())
@@ -43,7 +48,7 @@ PageSize()
 
 
 uint64_t
-AlignPageToPage(uint64_t va)
+AlignAddressToPage(uint64_t va)
 {
     return va & ~0xfff;
 }

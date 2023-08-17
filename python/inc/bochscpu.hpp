@@ -242,11 +242,18 @@ struct CPU
 namespace Memory
 {
 
+enum class Access : int
+{
+    Read    = 0,
+    Write   = 1,
+    Execute = 2,
+};
+
 uintptr_t
 PageSize();
 
 uint64_t
-AlignPageToPage(uint64_t va);
+AlignAddressToPage(uint64_t va);
 
 uint64_t
 AllocatePage();
