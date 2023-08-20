@@ -343,9 +343,9 @@ namespace Memory
 
 enum class Access : uint32_t
 {
-    Read    = BochsCPU::HookType::BOCHSCPU_HOOK_MEM_READ,
-    Write   = BochsCPU::HookType::BOCHSCPU_HOOK_MEM_WRITE,
-    Execute = BochsCPU::HookType::BOCHSCPU_HOOK_MEM_EXECUTE,
+    Read    = (uint32_t)BochsCPU::HookType::BOCHSCPU_HOOK_MEM_READ,
+    Write   = (uint32_t)BochsCPU::HookType::BOCHSCPU_HOOK_MEM_WRITE,
+    Execute = (uint32_t)BochsCPU::HookType::BOCHSCPU_HOOK_MEM_EXECUTE,
 };
 
 uintptr_t
