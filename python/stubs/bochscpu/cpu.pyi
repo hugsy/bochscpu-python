@@ -4,6 +4,8 @@ import bochscpu.cpu
 class ControlRegister:
     """
     ControlRegister class
+    @ref AMD Manual Vol 2 - 3-1
+    @ref AMD Manual Vol 2 - 3-7
     """
 
     @property
@@ -355,6 +357,300 @@ class ControlRegisterFlag(Flag):
         Initialize self.  See help(type(self)) for accurate signature.
         """
         ...
+
+class FlagRegisterFlag(Flag):
+    ID: FlagRegisterFlag
+    """ID Flag R/W"""
+    VIP: FlagRegisterFlag
+    """Virtual Interrupt Pending R/W"""
+    VIF: FlagRegisterFlag
+    """Virtual Interrupt Flag R/W"""
+    AC: FlagRegisterFlag
+    """Alignment Check R/W"""
+    VM: FlagRegisterFlag
+    """Virtual-8086 Mode R/W"""
+    RF: FlagRegisterFlag
+    """Resume Flag R/W"""
+    Reserved4: FlagRegisterFlag
+    """Read as Zero"""
+    NT: FlagRegisterFlag
+    """Nested Task R/W"""
+    IOPL2: FlagRegisterFlag
+    """IOPL I/O Privilege Level R/W"""
+    IOPL1: FlagRegisterFlag
+    """IOPL I/O Privilege Level R/W"""
+    OF: FlagRegisterFlag
+    """Overflow Flag R/W"""
+    DF: FlagRegisterFlag
+    """Direction Flag R/W"""
+    IF: FlagRegisterFlag
+    """Interrupt Flag R/W"""
+    TF: FlagRegisterFlag
+    """Trap Flag R/W"""
+    SF: FlagRegisterFlag
+    """Sign Flag R/W"""
+    ZF: FlagRegisterFlag
+    """Zero Flag R/W"""
+    Reserved3: FlagRegisterFlag
+    """Read as Zero"""
+    AF: FlagRegisterFlag
+    """Auxiliary Flag R/W"""
+    Reserved2: FlagRegisterFlag
+    """Read as Zero"""
+    PF: FlagRegisterFlag
+    """Parity Flag R/W"""
+    Reserved1: FlagRegisterFlag
+    """Read as One"""
+    CF: FlagRegisterFlag
+    """Carry Flag R/W"""
+
+class FlagRegister:
+    @property
+    def ID(self) -> bool:
+        """Get ID Flag R/W"""
+        ...
+    @ID.setter
+    def ID(self, value: bool) -> None:
+        """Set ID Flag R/W"""
+        ...
+    @property
+    def VIP(self) -> bool:
+        """Get Virtual Interrupt Pending R/W"""
+        ...
+    @VIP.setter
+    def VIP(self, value: bool) -> None:
+        """Set Virtual Interrupt Pending R/W"""
+        ...
+    @property
+    def VIF(self) -> bool:
+        """Get Virtual Interrupt Flag R/W"""
+        ...
+    @VIF.setter
+    def VIF(self, value: bool) -> None:
+        """Set Virtual Interrupt Flag R/W"""
+        ...
+    @property
+    def AC(self) -> bool:
+        """Get Alignment Check R/W"""
+        ...
+    @AC.setter
+    def AC(self, value: bool) -> None:
+        """Set Alignment Check R/W"""
+        ...
+    @property
+    def VM(self) -> bool:
+        """Get Virtual-8086 Mode R/W"""
+        ...
+    @VM.setter
+    def VM(self, value: bool) -> None:
+        """Set Virtual-8086 Mode R/W"""
+        ...
+    @property
+    def RF(self) -> bool:
+        """Get Resume Flag R/W"""
+        ...
+    @RF.setter
+    def RF(self, value: bool) -> None:
+        """Set Resume Flag R/W"""
+        ...
+    @property
+    def Reserved4(self) -> bool:
+        """Get Read as Zero"""
+        ...
+    @property
+    def NT(self) -> bool:
+        """Get Nested Task R/W"""
+        ...
+    @NT.setter
+    def NT(self, value: bool) -> None:
+        """Set Nested Task R/W"""
+        ...
+    @property
+    def IOPL2(self) -> bool:
+        """Get IOPL I/O Privilege Level R/W"""
+        ...
+    @IOPL2.setter
+    def IOPL2(self, value: bool) -> None:
+        """Set IOPL I/O Privilege Level R/W"""
+        ...
+    @property
+    def IOPL1(self) -> bool:
+        """Get IOPL I/O Privilege Level R/W"""
+        ...
+    @IOPL1.setter
+    def IOPL1(self, value: bool) -> None:
+        """Set IOPL I/O Privilege Level R/W"""
+        ...
+    @property
+    def OF(self) -> bool:
+        """Get Overflow Flag R/W"""
+        ...
+    @OF.setter
+    def OF(self, value: bool) -> None:
+        """Set Overflow Flag R/W"""
+        ...
+    @property
+    def DF(self) -> bool:
+        """Get Direction Flag R/W"""
+        ...
+    @DF.setter
+    def DF(self, value: bool) -> None:
+        """Set Direction Flag R/W"""
+        ...
+    @property
+    def IF(self) -> bool:
+        """Get Interrupt Flag R/W"""
+        ...
+    @IF.setter
+    def IF(self, value: bool) -> None:
+        """Set Interrupt Flag R/W"""
+        ...
+    @property
+    def TF(self) -> bool:
+        """Get Trap Flag R/W"""
+        ...
+    @TF.setter
+    def TF(self, value: bool) -> None:
+        """Set Trap Flag R/W"""
+        ...
+    @property
+    def SF(self) -> bool:
+        """Get Sign Flag R/W"""
+        ...
+    @SF.setter
+    def SF(self, value: bool) -> None:
+        """Set Sign Flag R/W"""
+        ...
+    @property
+    def ZF(self) -> bool:
+        """Get Zero Flag R/W"""
+        ...
+    @ZF.setter
+    def ZF(self, value: bool) -> None:
+        """Set Zero Flag R/W"""
+        ...
+    @property
+    def Reserved3(self) -> bool:
+        """Get Read as Zero"""
+        ...
+    @property
+    def AF(self) -> bool:
+        """Get Auxiliary Flag R/W"""
+        ...
+    @AF.setter
+    def AF(self, value: bool) -> None:
+        """Set Auxiliary Flag R/W"""
+        ...
+    @property
+    def Reserved2(self) -> bool:
+        """Get Read as Zero"""
+        ...
+    @property
+    def PF(self) -> bool:
+        """Get Parity Flag R/W"""
+        ...
+    @PF.setter
+    def PF(self, value: bool) -> None:
+        """Set Parity Flag R/W"""
+        ...
+    @property
+    def Reserved1(self) -> bool:
+        """Get Read as One"""
+        ...
+    @property
+    def CF(self) -> bool:
+        """Get Carry Flag R/W"""
+        ...
+    @CF.setter
+    def CF(self, value: bool) -> None:
+        """Set Carry Flag R/W"""
+        ...
+    def __int__(self) -> int: ...
+
+class FeatureRegisterFlag(Flag):
+    TCE: FeatureRegisterFlag
+    """Translation Cache Extension R/W"""
+    FFXSR: FeatureRegisterFlag
+    """Fast FXSAVE/FXRSTOR R/W"""
+    LMSLE: FeatureRegisterFlag
+    """Long Mode Segment Limit Enable R/W"""
+    SVME: FeatureRegisterFlag
+    """Secure Virtual Machine Enable R/W"""
+    NXE: FeatureRegisterFlag
+    """No-Execute Enable R/W"""
+    LMA: FeatureRegisterFlag
+    """Long Mode Active R/W"""
+    LME: FeatureRegisterFlag
+    """Long Mode Enable R/W"""
+    SCE: FeatureRegisterFlag
+    """System Call Extensions R/W"""
+
+class FeatureRegister:
+    @property
+    def TCE(self) -> bool:
+        """Get Translation Cache Extension R/W"""
+        ...
+    @TCE.setter
+    def TCE(self, value: bool) -> None:
+        """Set Translation Cache Extension R/W"""
+        ...
+    @property
+    def FFXSR(self) -> bool:
+        """Get Fast FXSAVE/FXRSTOR R/W"""
+        ...
+    @FFXSR.setter
+    def FFXSR(self, value: bool) -> None:
+        """Set Fast FXSAVE/FXRSTOR R/W"""
+        ...
+    @property
+    def LMSLE(self) -> bool:
+        """Get Long Mode Segment Limit Enable R/W"""
+        ...
+    @LMSLE.setter
+    def LMSLE(self, value: bool) -> None:
+        """Set Long Mode Segment Limit Enable R/W"""
+        ...
+    @property
+    def SVME(self) -> bool:
+        """Get Secure Virtual Machine Enable R/W"""
+        ...
+    @SVME.setter
+    def SVME(self, value: bool) -> None:
+        """Set Secure Virtual Machine Enable R/W"""
+        ...
+    @property
+    def NXE(self) -> bool:
+        """Get No-Execute Enable R/W"""
+        ...
+    @NXE.setter
+    def NXE(self, value: bool) -> None:
+        """Set No-Execute Enable R/W"""
+        ...
+    @property
+    def LMA(self) -> bool:
+        """Get Long Mode Active R/W"""
+        ...
+    @LMA.setter
+    def LMA(self, value: bool) -> None:
+        """Set Long Mode Active R/W"""
+        ...
+    @property
+    def LME(self) -> bool:
+        """Get Long Mode Enable R/W"""
+        ...
+    @LME.setter
+    def LME(self, value: bool) -> None:
+        """Set Long Mode Enable R/W"""
+        ...
+    @property
+    def SCE(self) -> bool:
+        """Get System Call Extensions R/W"""
+        ...
+    @SCE.setter
+    def SCE(self, value: bool) -> None:
+        """Set System Call Extensions R/W"""
+        ...
+    def __int__(self) -> int: ...
 
 class cpu:
     def __init__(*args, **kwargs):
