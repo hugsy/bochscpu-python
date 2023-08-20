@@ -186,13 +186,9 @@ exception_cb(context_t* ctx, uint32_t cpu_id, unsigned vector, unsigned error_co
 namespace Cpu
 {
 
-struct ControlRegister : std::bitset<64>
-{
-};
-
 enum class ControlRegisterFlag : uint64_t
 {
-    /// CR0 - 3.1.1
+    /// CR0 - - AMD Manual Vol2 - 3.1.1
     PG = 31, // Paging R/W
     CD = 30, // Cache Disable R/W
     NW = 29, // Not Writethrough R/W
@@ -206,7 +202,7 @@ enum class ControlRegisterFlag : uint64_t
     PE = 0,  // Protection Enabled R/W
 
 
-    /// CR4 - 3.7.1
+    /// CR4 - - AMD Manual Vol2 - 3.7.1
     OSXSAVE    = 18, // XSAVE and Processor Extended States Enable Bit R/W
     FSGSBASE   = 16, // Enable RDFSBASE, RDGSBASE, WRFSBASE, and WRGSBASE instructions R/W
     OSXMMEXCPT = 10, // Operating System Unmasked Exception Support R/W
@@ -220,6 +216,47 @@ enum class ControlRegisterFlag : uint64_t
     TSD        = 2,  // Time Stamp Disable R/W
     PVI        = 1,  // Protected-Mode Virtual Interrupts R/W
     VME        = 0,  // Virtual-8086 Mode Extensions R/W
+};
+
+enum class FlagRegisterFlag : uint64_t
+{
+    // RFLAGS - AMD Manual Vol2 - 3.8
+    ID        = 21, // ID Flag R/W
+    VIP       = 20, // Virtual Interrupt Pending R/W
+    VIF       = 19, // Virtual Interrupt Flag R/W
+    AC        = 18, // Alignment Check R/W
+    VM        = 17, // Virtual-8086 Mode R/W
+    RF        = 16, // Resume Flag R/W
+    Reserved4 = 15, // Read as Zero
+    NT        = 14, // Nested Task R/W
+    IOPL2     = 13, // IOPL I/O Privilege Level R/W
+    IOPL1     = 12, // IOPL I/O Privilege Level R/W
+    OF        = 11, // Overflow Flag R/W
+    DF        = 10, // Direction Flag R/W
+    IF        = 9,  // Interrupt Flag R/W
+    TF        = 8,  // Trap Flag R/W
+    SF        = 7,  // Sign Flag R/W
+    ZF        = 6,  // Zero Flag R/W
+    Reserved3 = 5,  // Read as Zero
+    AF        = 4,  // Auxiliary Flag R/W
+    Reserved2 = 3,  // Read as Zero
+    PF        = 2,  // Parity Flag R/W
+    Reserved1 = 1,  // Read as One
+    CF        = 0,  // Carry Flag R/W
+};
+
+
+struct ControlRegister : std::bitset<64>
+{
+};
+
+
+struct FlagRegister : std::bitset<64>
+{
+    FlagRegister()
+    {
+        set((int)FlagRegisterFlag::Reserved1, true);
+    }
 };
 
 

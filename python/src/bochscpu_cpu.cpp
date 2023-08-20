@@ -52,6 +52,31 @@ bochscpu_cpu_module(nb::module_& base_module)
         .value("VME", BochsCPU::Cpu::ControlRegisterFlag::VME, "Virtual-8086 Mode Extensions R/W")
         .export_values();
 
+    nb::enum_<BochsCPU::Cpu::FlagRegisterFlag>(m, "FlagRegisterFlag")
+        .value("ID", BochsCPU::Cpu::FlagRegisterFlag::ID, "ID Flag R/W")
+        .value("VIP", BochsCPU::Cpu::FlagRegisterFlag::VIP, "Virtual Interrupt Pending R/W")
+        .value("VIF", BochsCPU::Cpu::FlagRegisterFlag::VIF, "Virtual Interrupt Flag R/W")
+        .value("AC", BochsCPU::Cpu::FlagRegisterFlag::AC, "Alignment Check R/W")
+        .value("VM", BochsCPU::Cpu::FlagRegisterFlag::VM, "Virtual-8086 Mode R/W")
+        .value("RF", BochsCPU::Cpu::FlagRegisterFlag::RF, "Resume Flag R/W")
+        .value("Reserved4", BochsCPU::Cpu::FlagRegisterFlag::Reserved4, "Read as Zero")
+        .value("NT", BochsCPU::Cpu::FlagRegisterFlag::NT, "Nested Task R/W")
+        .value("IOPL2", BochsCPU::Cpu::FlagRegisterFlag::IOPL2, "IOPL I/O Privilege Level R/W")
+        .value("IOPL1", BochsCPU::Cpu::FlagRegisterFlag::IOPL1, "IOPL I/O Privilege Level R/W")
+        .value("OF", BochsCPU::Cpu::FlagRegisterFlag::OF, "Overflow Flag R/W")
+        .value("DF", BochsCPU::Cpu::FlagRegisterFlag::DF, "Direction Flag R/W")
+        .value("IF", BochsCPU::Cpu::FlagRegisterFlag::IF, "Interrupt Flag R/W")
+        .value("TF", BochsCPU::Cpu::FlagRegisterFlag::TF, "Trap Flag R/W")
+        .value("SF", BochsCPU::Cpu::FlagRegisterFlag::SF, "Sign Flag R/W")
+        .value("ZF", BochsCPU::Cpu::FlagRegisterFlag::ZF, "Zero Flag R/W")
+        .value("Reserved3", BochsCPU::Cpu::FlagRegisterFlag::Reserved3, "Read as Zero")
+        .value("AF", BochsCPU::Cpu::FlagRegisterFlag::AF, "Auxiliary Flag R/W")
+        .value("Reserved2", BochsCPU::Cpu::FlagRegisterFlag::Reserved2, "Read as Zero")
+        .value("PF", BochsCPU::Cpu::FlagRegisterFlag::PF, "Parity Flag R/W")
+        .value("Reserved1", BochsCPU::Cpu::FlagRegisterFlag::Reserved1, "Read as One")
+        .value("CF", BochsCPU::Cpu::FlagRegisterFlag::CF, "Carry Flag R/W")
+        .export_values();
+
     nb::class_<BochsCPU::Cpu::ControlRegister>(m, "ControlRegister")
         .def(nb::init<>())
         .def_prop_rw(
@@ -306,6 +331,233 @@ bochscpu_cpu_module(nb::module_& base_module)
             [](BochsCPU::Cpu::ControlRegister& cr)
             {
                 return cr.to_ullong();
+            });
+
+
+    nb::class_<BochsCPU::Cpu::FlagRegister>(m, "FlagRegister")
+        .def(nb::init<>())
+        .def_prop_rw(
+            "ID",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::ID);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::ID, onoff);
+            },
+            "ID Flag R/W")
+        .def_prop_rw(
+            "VIP",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::VIP);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::VIP, onoff);
+            },
+            "Virtual Interrupt Pending R/W")
+        .def_prop_rw(
+            "VIF",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::VIF);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::VIF, onoff);
+            },
+            "Virtual Interrupt Flag R/W")
+        .def_prop_rw(
+            "AC",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::AC);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::AC, onoff);
+            },
+            "Alignment Check R/W")
+        .def_prop_rw(
+            "VM",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::VM);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::VM, onoff);
+            },
+            "Virtual-8086 Mode R/W")
+        .def_prop_rw(
+            "RF",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::RF);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::RF, onoff);
+            },
+            "Resume Flag R/W")
+        .def_prop_ro(
+            "Reserved4",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved4);
+            },
+            "Read as Zero")
+        .def_prop_rw(
+            "NT",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::NT);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::NT, onoff);
+            },
+            "Nested Task R/W")
+        .def_prop_rw(
+            "IOPL",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return int(fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::IOPL2)) << 1 |
+                       int(fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::IOPL1)) << 0;
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, uint8_t iopl)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::IOPL2, iopl & 2);
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::IOPL1, iopl & 1);
+            },
+            "IOPL I/O Privilege Level R/W")
+        .def_prop_rw(
+            "OF",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::OF);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::OF, onoff);
+            },
+            "Overflow Flag R/W")
+        .def_prop_rw(
+            "DF",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::DF);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::DF, onoff);
+            },
+            "Direction Flag R/W")
+        .def_prop_rw(
+            "IF",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::IF);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::IF, onoff);
+            },
+            "Interrupt Flag R/W")
+        .def_prop_rw(
+            "TF",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::TF);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::TF, onoff);
+            },
+            "Trap Flag R/W")
+        .def_prop_rw(
+            "SF",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::SF);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::SF, onoff);
+            },
+            "Sign Flag R/W")
+        .def_prop_rw(
+            "ZF",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::ZF);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::ZF, onoff);
+            },
+            "Zero Flag R/W")
+        .def_prop_ro(
+            "Reserved3",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved3);
+            },
+            "Read as Zero")
+        .def_prop_rw(
+            "AF",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::AF);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::AF, onoff);
+            },
+            "Auxiliary Flag R/W")
+        .def_prop_ro(
+            "Reserved2",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved2);
+            },
+            "Read as Zero")
+        .def_prop_rw(
+            "PF",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::PF);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::PF, onoff);
+            },
+            "Parity Flag R/W")
+        .def_prop_ro(
+            "Reserved1",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved1);
+            },
+            "Read as One")
+        .def_prop_rw(
+            "CF",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::CF);
+            },
+            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::CF, onoff);
+            },
+            "Carry Flag R/W")
+        .def(
+            "__int__",
+            [](BochsCPU::Cpu::FlagRegister& fr)
+            {
+                return fr.to_ullong();
             });
 
     nb::class_<BochsCPU::Cpu::CPU>(m, "cpu")
