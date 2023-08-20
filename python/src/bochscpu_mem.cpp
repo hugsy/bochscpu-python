@@ -29,6 +29,67 @@ bochscpu_memory_module(nb::module_& base_module)
     m.def("PageSize", &BochsCPU::Memory::PageSize);
     m.def("AlignAddressToPage", &BochsCPU::Memory::AlignAddressToPage);
 
+    m.def(
+        "page_insert",
+        [](uint64_t gpa, uintptr_t hva)
+        {
+            dbg("mapping GPA=%#llx <-> HVA=%#llx", gpa, hva);
+            ::bochscpu_mem_page_insert(gpa, (uint8_t*)hva);
+        },
+        "Map a GPA to a HVA");
+    m.def("page_remove", &bochscpu_mem_page_remove, "gpa"_a);
+    m.def(
+        "phy_translate",
+        [](const uint64_t gpa)
+        {
+            return (uintptr_t)(::bochscpu_mem_phy_translate(gpa));
+        },
+        "gpa"_a);
+    m.def("virt_translate", &bochscpu_mem_virt_translate, "cr3"_a, "gva"_a);
+    m.def(
+        "phy_read",
+        [](uint64_t gpa, uintptr_t sz) -> std::vector<uint8_t>
+        {
+            std::vector<uint8_t> hva(sz);
+            ::bochscpu_mem_phy_read(gpa, hva.data(), hva.size());
+            return hva;
+        },
+        "gpa"_a,
+        "size"_a,
+        "Read from GPA");
+    m.def(
+        "phy_write",
+        [](uint64_t gpa, std::vector<uint8_t> const& hva)
+        {
+            ::bochscpu_mem_phy_write(gpa, hva.data(), hva.size());
+        },
+        "gpa"_a,
+        "hva"_a,
+        "Write to GPA");
+    m.def(
+        "virt_write",
+        [](uint64_t cr3, uint64_t gva, std::vector<uint8_t> const& hva)
+        {
+            return ::bochscpu_mem_virt_write(cr3, gva, hva.data(), hva.size()) == 0;
+        },
+        "cr3"_a,
+        "gva"_a,
+        "hva"_a,
+        "Write to GVA");
+    m.def(
+        "virt_read",
+        [](uint64_t cr3, uint64_t gva, const uint64_t sz) -> std::vector<uint8_t>
+        {
+            std::vector<uint8_t> hva(sz);
+            if ( ::bochscpu_mem_virt_read(cr3, gva, hva.data(), hva.size()) )
+                throw std::runtime_error("invalid access");
+            return hva;
+        },
+        "cr3"_a,
+        "gva"_a,
+        "sz"_a,
+        "Read from GVA");
+
     nb::class_<BochsCPU::Memory::PageMapLevel4Table>(m, "PageMapLevel4Table")
         .def(nb::init<>())
         .def("Translate", &BochsCPU::Memory::PageMapLevel4Table::Translate, "Translate a VA -> PA")

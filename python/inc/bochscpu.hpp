@@ -56,36 +56,44 @@
 namespace BochsCPU
 {
 
-struct Session;
-
-struct Hook
+enum class InstructionType
 {
-    void* ctx {nullptr};
-    std::function<void(Session*, uint32_t, void*)> before_execution;
-    std::function<void(Session*, uint32_t, void*)> after_execution;
-    std::function<void(Session*, uint32_t, unsigned int)> reset;
-    std::function<void(Session*, uint32_t)> hlt;
-    std::function<void(Session*, uint32_t, uint64_t, uintptr_t, uint32_t)> mwait;
-    std::function<void(Session*, uint32_t, uint64_t, uint64_t)> cnear_branch_taken;
-    std::function<void(Session*, uint32_t, uint64_t, uint64_t)> cnear_branch_not_taken;
-    std::function<void(Session*, uint32_t, unsigned, uint64_t, uint64_t)> ucnear_branch;
-    std::function<void(Session*, uint32_t, uint32_t, uint16_t, uint64_t, uint16_t, uint64_t)> far_branch;
-    std::function<void(Session*, uint32_t, uint32_t, uint64_t)> vmexit;
-    std::function<void(Session*, uint32_t, unsigned)> interrupt;
-    std::function<void(Session*, uint32_t, unsigned, uint16_t, uint64_t)> hw_interrupt;
-    std::function<void(Session*, uint32_t, uint64_t, uint64_t)> clflush;
-    std::function<void(Session*, uint32_t, unsigned, uint64_t)> tlb_cntrl;
-    std::function<void(Session*, uint32_t, unsigned)> cache_cntrl;
-    std::function<void(Session*, uint32_t, unsigned, unsigned, uint64_t)> prefetch_hint;
-    std::function<void(Session*, uint32_t, unsigned, uint64_t)> wrmsr;
-    std::function<void(Session*, uint32_t, void*)> repeat_iteration;
-    std::function<void(Session*, uint32_t, uint64_t, uint64_t, uintptr_t, uint32_t, uint32_t)> lin_access;
-    std::function<void(Session*, uint32_t, uint64_t, uint64_t, uintptr_t, unsigned)> phy_access;
-    std::function<void(Session*, uint16_t, uintptr_t)> inp;
-    std::function<void(Session*, uint16_t, uintptr_t, unsigned)> inp2;
-    std::function<void(Session*, uint16_t, uintptr_t, unsigned)> outp;
-    std::function<void(Session*, uint32_t, void*, uint8_t*, uintptr_t, bool, bool)> opcode;
-    std::function<void(Session*, uint32_t, unsigned, unsigned)> exception;
+    BX_INSTR_IS_JMP                 = BX_INSTR_IS_JMP,
+    BOCHSCPU_INSTR_IS_JMP_INDIRECT  = BOCHSCPU_INSTR_IS_JMP_INDIRECT,
+    BOCHSCPU_INSTR_IS_CALL          = BOCHSCPU_INSTR_IS_CALL,
+    BOCHSCPU_INSTR_IS_CALL_INDIRECT = BOCHSCPU_INSTR_IS_CALL_INDIRECT,
+    BOCHSCPU_INSTR_IS_RET           = BOCHSCPU_INSTR_IS_RET,
+    BOCHSCPU_INSTR_IS_IRET          = BOCHSCPU_INSTR_IS_IRET,
+    BOCHSCPU_INSTR_IS_INT           = BOCHSCPU_INSTR_IS_INT,
+    BOCHSCPU_INSTR_IS_SYSCALL       = BOCHSCPU_INSTR_IS_SYSCALL,
+    BOCHSCPU_INSTR_IS_SYSRET        = BOCHSCPU_INSTR_IS_SYSRET,
+    BOCHSCPU_INSTR_IS_SYSENTER      = BOCHSCPU_INSTR_IS_SYSENTER,
+    BOCHSCPU_INSTR_IS_SYSEXIT       = BOCHSCPU_INSTR_IS_SYSEXIT,
+};
+
+
+enum class HookType
+{
+    BOCHSCPU_HOOK_MEM_READ          = BOCHSCPU_HOOK_MEM_READ,
+    BOCHSCPU_HOOK_MEM_WRITE         = BOCHSCPU_HOOK_MEM_WRITE,
+    BOCHSCPU_HOOK_MEM_EXECUTE       = BOCHSCPU_HOOK_MEM_EXECUTE,
+    BOCHSCPU_HOOK_MEM_RW            = BOCHSCPU_HOOK_MEM_RW,
+    BOCHSCPU_HOOK_TLB_CR0           = BOCHSCPU_HOOK_TLB_CR0,
+    BOCHSCPU_HOOK_TLB_CR3           = BOCHSCPU_HOOK_TLB_CR3,
+    BOCHSCPU_HOOK_TLB_CR4           = BOCHSCPU_HOOK_TLB_CR4,
+    BOCHSCPU_HOOK_TLB_TASKSWITCH    = BOCHSCPU_HOOK_TLB_TASKSWITCH,
+    BOCHSCPU_HOOK_TLB_CONTEXTSWITCH = BOCHSCPU_HOOK_TLB_CONTEXTSWITCH,
+    BOCHSCPU_HOOK_TLB_INVLPG        = BOCHSCPU_HOOK_TLB_INVLPG,
+    BOCHSCPU_HOOK_TLB_INVEPT        = BOCHSCPU_HOOK_TLB_INVEPT,
+    BOCHSCPU_HOOK_TLB_INVVPID       = BOCHSCPU_HOOK_TLB_INVVPID,
+    BOCHSCPU_HOOK_TLB_INVPCID       = BOCHSCPU_HOOK_TLB_INVPCID,
+};
+
+
+enum class OpcodeOperationType
+{
+    BOCHSCPU_OPCODE_ERROR    = BOCHSCPU_OPCODE_ERROR,
+    BOCHSCPU_OPCODE_INSERTED = BOCHSCPU_OPCODE_INSERTED,
 };
 
 
@@ -433,6 +441,37 @@ struct Session
 
     std::function<void(uint64_t)> missing_page_handler;
     BochsCPU::Cpu::CPU cpu {};
+};
+
+
+struct Hook
+{
+    void* ctx {nullptr};
+    std::function<void(Session*, uint32_t, void*)> before_execution;
+    std::function<void(Session*, uint32_t, void*)> after_execution;
+    std::function<void(Session*, uint32_t, unsigned int)> reset;
+    std::function<void(Session*, uint32_t)> hlt;
+    std::function<void(Session*, uint32_t, uint64_t, uintptr_t, uint32_t)> mwait;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t)> cnear_branch_taken;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t)> cnear_branch_not_taken;
+    std::function<void(Session*, uint32_t, unsigned, uint64_t, uint64_t)> ucnear_branch;
+    std::function<void(Session*, uint32_t, uint32_t, uint16_t, uint64_t, uint16_t, uint64_t)> far_branch;
+    std::function<void(Session*, uint32_t, uint32_t, uint64_t)> vmexit;
+    std::function<void(Session*, uint32_t, unsigned)> interrupt;
+    std::function<void(Session*, uint32_t, unsigned, uint16_t, uint64_t)> hw_interrupt;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t)> clflush;
+    std::function<void(Session*, uint32_t, unsigned, uint64_t)> tlb_cntrl;
+    std::function<void(Session*, uint32_t, unsigned)> cache_cntrl;
+    std::function<void(Session*, uint32_t, unsigned, unsigned, uint64_t)> prefetch_hint;
+    std::function<void(Session*, uint32_t, unsigned, uint64_t)> wrmsr;
+    std::function<void(Session*, uint32_t, void*)> repeat_iteration;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t, uintptr_t, uint32_t, uint32_t)> lin_access;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t, uintptr_t, unsigned)> phy_access;
+    std::function<void(Session*, uint16_t, uintptr_t)> inp;
+    std::function<void(Session*, uint16_t, uintptr_t, unsigned)> inp2;
+    std::function<void(Session*, uint16_t, uintptr_t, unsigned)> outp;
+    std::function<void(Session*, uint32_t, void*, uint8_t*, uintptr_t, bool, bool)> opcode;
+    std::function<void(Session*, uint32_t, unsigned, unsigned)> exception;
 };
 
 
