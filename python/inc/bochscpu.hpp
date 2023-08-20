@@ -245,6 +245,17 @@ enum class FlagRegisterFlag : uint64_t
     CF        = 0,  // Carry Flag R/W
 };
 
+enum class FeatureRegisterFlag : uint64_t
+{
+    TCE   = 15, // Translation Cache Extension R/W
+    FFXSR = 14, // Fast FXSAVE/FXRSTOR R/W
+    LMSLE = 13, // Long Mode Segment Limit Enable R/W
+    SVME  = 12, // Secure Virtual Machine Enable R/W
+    NXE   = 11, // No-Execute Enable R/W
+    LMA   = 10, // Long Mode Active R/W
+    LME   = 8,  // Long Mode Enable R/W
+    SCE   = 0,  // System Call Extensions R/W
+};
 
 struct ControlRegister : std::bitset<64>
 {
@@ -257,6 +268,10 @@ struct FlagRegister : std::bitset<64>
     {
         set((int)FlagRegisterFlag::Reserved1, true);
     }
+};
+
+struct FeatureRegister : std::bitset<64>
+{
 };
 
 

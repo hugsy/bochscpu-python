@@ -77,6 +77,18 @@ bochscpu_cpu_module(nb::module_& base_module)
         .value("CF", BochsCPU::Cpu::FlagRegisterFlag::CF, "Carry Flag R/W")
         .export_values();
 
+    nb::enum_<BochsCPU::Cpu::FeatureRegisterFlag>(m, "FeatureRegisterFlag")
+        .value("TCE", BochsCPU::Cpu::FeatureRegisterFlag::TCE, "Translation Cache Extension R/W")
+        .value("FFXSR", BochsCPU::Cpu::FeatureRegisterFlag::FFXSR, "Fast FXSAVE/FXRSTOR R/W")
+        .value("LMSLE", BochsCPU::Cpu::FeatureRegisterFlag::LMSLE, "Long Mode Segment Limit Enable R/W")
+        .value("SVME", BochsCPU::Cpu::FeatureRegisterFlag::SVME, "Secure Virtual Machine Enable R/W")
+        .value("NXE", BochsCPU::Cpu::FeatureRegisterFlag::NXE, "No-Execute Enable R/W")
+        .value("LMA", BochsCPU::Cpu::FeatureRegisterFlag::LMA, "Long Mode Active R/W")
+        .value("LME", BochsCPU::Cpu::FeatureRegisterFlag::LME, "Long Mode Enable R/W")
+        .value("SCE", BochsCPU::Cpu::FeatureRegisterFlag::SCE, "System Call Extensions R/W")
+        .export_values();
+
+#pragma region ControlRegister
     nb::class_<BochsCPU::Cpu::ControlRegister>(m, "ControlRegister")
         .def(nb::init<>())
         .def_prop_rw(
@@ -332,8 +344,9 @@ bochscpu_cpu_module(nb::module_& base_module)
             {
                 return cr.to_ullong();
             });
+#pragma endregion
 
-
+#pragma region FlagRegistrer
     nb::class_<BochsCPU::Cpu::FlagRegister>(m, "FlagRegister")
         .def(nb::init<>())
         .def_prop_rw(
@@ -559,6 +572,104 @@ bochscpu_cpu_module(nb::module_& base_module)
             {
                 return fr.to_ullong();
             });
+#pragma endregion
+
+#pragma region FeatureRegister
+    nb::class_<BochsCPU::Cpu::FeatureRegister>(m, "FeatureRegister")
+        .def(nb::init<>())
+
+        .def_prop_rw(
+            "TCE",
+            [](BochsCPU::Cpu::FeatureRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::TCE);
+            },
+            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::TCE, onoff);
+            },
+            "Translation Cache Extension R/W")
+        .def_prop_rw(
+            "FFXSR",
+            [](BochsCPU::Cpu::FeatureRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::FFXSR);
+            },
+            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::FFXSR, onoff);
+            },
+            "Fast FXSAVE/FXRSTOR R/W")
+        .def_prop_rw(
+            "LMSLE",
+            [](BochsCPU::Cpu::FeatureRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::LMSLE);
+            },
+            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::LMSLE, onoff);
+            },
+            "Long Mode Segment Limit Enable R/W")
+        .def_prop_rw(
+            "SVME",
+            [](BochsCPU::Cpu::FeatureRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::SVME);
+            },
+            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::SVME, onoff);
+            },
+            "Secure Virtual Machine Enable R/W")
+        .def_prop_rw(
+            "NXE",
+            [](BochsCPU::Cpu::FeatureRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::NXE);
+            },
+            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::NXE, onoff);
+            },
+            "No-Execute Enable R/W")
+        .def_prop_rw(
+            "LMA",
+            [](BochsCPU::Cpu::FeatureRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::LMA);
+            },
+            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::LMA, onoff);
+            },
+            "Long Mode Active R/W")
+        .def_prop_rw(
+            "LME",
+            [](BochsCPU::Cpu::FeatureRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::LME);
+            },
+            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::LME, onoff);
+            },
+            "Long Mode Enable R/W")
+        .def_prop_rw(
+            "SCE",
+            [](BochsCPU::Cpu::FeatureRegister& fr)
+            {
+                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::SCE);
+            },
+            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
+            {
+                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::SCE, onoff);
+            },
+            "System Call Extensions R/W")
+
+
+        ;
+#pragma endregion
 
     nb::class_<BochsCPU::Cpu::CPU>(m, "cpu")
         .def_ro("id", &BochsCPU::Cpu::CPU::id)
