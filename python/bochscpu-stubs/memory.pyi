@@ -42,7 +42,7 @@ def phy_read(gpa: int, size: int) -> list[int]:
     ...
 
 def phy_translate(gpa: int) -> int: ...
-def phy_write(gpa: int, hva: list[int]) -> None:
+def phy_write(gpa: int, hva: bytes) -> None:
     """
     Write to GPA
     """
@@ -55,7 +55,7 @@ def virt_read(cr3: int, gva: int, sz: int) -> list[int]:
     ...
 
 def virt_translate(cr3: int, gva: int) -> int: ...
-def virt_write(cr3: int, gva: int, hva: list[int]) -> bool:
+def virt_write(cr3: int, gva: int, hva: bytes) -> bool:
     """
     Write to GVA
     """

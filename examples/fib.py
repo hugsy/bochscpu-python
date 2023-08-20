@@ -8,15 +8,20 @@ import capstone
 import keystone
 
 import bochscpu
+import bochscpu.cpu
+import bochscpu.memory
 
 DEBUG = True
 PAGE_SIZE = bochscpu.memory.PageSize()
 
 
-@dataclasses.dataclass
 class Stats:
     insn_nb: int = 0
-    mem_access: list[int] = dataclasses.field(default_factory=lambda: [0, 0, 0])
+    mem_access: dict[bochscpu.memory.AccessType, int] = {
+        bochscpu.memory.AccessType.Read: 0,
+        bochscpu.memory.AccessType.Write: 0,
+        bochscpu.memory.AccessType.Execute: 0,
+    }
 
 
 stats = Stats()
@@ -299,7 +304,9 @@ def emulate(code: bytes):
         f"vm stopped, execution: {stats.insn_nb} insns in {t2-t1}ns (~{int(stats.insn_nb // ((t2-t1)/1_000_000_000))}) insn/s"
     )
     dbg(
-        f"mem accesses: read={stats.mem_access[0]} write={stats.mem_access[1]} execute={stats.mem_access[2]}"
+        f"mem accesses: read={stats.mem_access[bochscpu.memory.AccessType.Read]} "
+        f"write={stats.mem_access[bochscpu.memory.AccessType.Write]} "
+        f"execute={stats.mem_access[bochscpu.memory.AccessType.Execute]}"
     )
 
     if stats.insn_nb < len(INSNS):

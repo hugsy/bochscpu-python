@@ -1,6 +1,7 @@
 from typing import Any, Callable, Optional, overload
 from enum import Enum
 import bochscpu
+import bochscpu.cpu
 
 class GlobalSegment:
     """
@@ -135,6 +136,8 @@ class Segment:
         Get/Set the Segment `selector` attribute
         """
         ...
+    def __int__(self) -> int:
+        """Get the selector value as an integer"""
 
 class State:
     """

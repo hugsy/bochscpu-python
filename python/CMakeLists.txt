@@ -34,6 +34,7 @@ else()
 endif()
 
 install(TARGETS bochscpu LIBRARY DESTINATION .)
+install(DIRECTORY bochscpu-stubs DESTINATION .)
 
 if(MSVC)
     install(FILES $<TARGET_PDB_FILE:bochscpu> DESTINATION . OPTIONAL)
