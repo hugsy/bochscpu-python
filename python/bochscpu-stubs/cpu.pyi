@@ -1,4 +1,4 @@
-from enum import Flag
+from enum import Flag, Enum
 import bochscpu.cpu
 
 class ControlRegister:
@@ -646,6 +646,25 @@ class FeatureRegister:
         """Set System Call Extensions R/W"""
         ...
     def __int__(self) -> int: ...
+
+class ExceptionType(Enum):
+    DivideError: ExceptionType
+    Debug: ExceptionType
+    BreakPoint: ExceptionType
+    Overflow: ExceptionType
+    BoundRange: ExceptionType
+    InvalidOpcode: ExceptionType
+    NonMaskable: ExceptionType
+    DoubleFfault: ExceptionType
+    InvalidTss: ExceptionType
+    NotPresentSegment: ExceptionType
+    Stack: ExceptionType
+    GeneralProtection: ExceptionType
+    PageFault: ExceptionType
+    FloatingPoint: ExceptionType
+    AlignmentCheck: ExceptionType
+    MachineCheck: ExceptionType
+    ControlProtection: ExceptionType
 
 class cpu:
     def __init__(*args, **kwargs):

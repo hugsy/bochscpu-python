@@ -675,6 +675,30 @@ bochscpu_cpu_module(nb::module_& base_module)
             });
 #pragma endregion
 
+    ///
+    /// @brief AMD Manual Vol 2 - 8.1
+    ///
+    ///
+    nb::enum_<BochsCPU::BochsException>(m, "ExceptionType", "CPU Exceptions")
+        .value("DivideError", BochsCPU::BochsException::BX_DE_EXCEPTION)
+        .value("Debug", BochsCPU::BochsException::BX_DB_EXCEPTION)
+        .value("BreakPoint", BochsCPU::BochsException::BX_BP_EXCEPTION)
+        .value("Overflow", BochsCPU::BochsException::BX_OF_EXCEPTION)
+        .value("BoundRange", BochsCPU::BochsException::BX_BR_EXCEPTION)
+        .value("InvalidOpcode", BochsCPU::BochsException::BX_UD_EXCEPTION)
+        .value("NonMaskable", BochsCPU::BochsException::BX_NM_EXCEPTION)
+        .value("DoubleFfault", BochsCPU::BochsException::BX_DF_EXCEPTION)
+        .value("InvalidTss", BochsCPU::BochsException::BX_TS_EXCEPTION)
+        .value("NotPresentSegment", BochsCPU::BochsException::BX_NP_EXCEPTION)
+        .value("Stack", BochsCPU::BochsException::BX_SS_EXCEPTION)
+        .value("GeneralProtection", BochsCPU::BochsException::BX_GP_EXCEPTION)
+        .value("PageFault", BochsCPU::BochsException::BX_PF_EXCEPTION)
+        .value("FloatingPoint", BochsCPU::BochsException::BX_MF_EXCEPTION)
+        .value("AlignmentCheck", BochsCPU::BochsException::BX_AC_EXCEPTION)
+        .value("MachineCheck", BochsCPU::BochsException::BX_MC_EXCEPTION)
+        .value("ControlProtection", BochsCPU::BochsException::BX_CP_EXCEPTION)
+        .export_values();
+
     nb::class_<BochsCPU::Cpu::CPU>(m, "cpu")
         .def_ro("id", &BochsCPU::Cpu::CPU::id)
 

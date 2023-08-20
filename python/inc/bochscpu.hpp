@@ -55,8 +55,34 @@
 
 namespace BochsCPU
 {
+///
+/// @brief Src https://github.com/lubomyr/bochs/blob/8e0b9abcd81cd24d4d9c68f7fdef2f53bc180d33/cpu/cpu.h#L306
+///
+///
+enum class BochsException : uint32_t
+{
+    BX_DE_EXCEPTION = 0, // Divide Error (fault)
+    BX_DB_EXCEPTION = 1, // Debug (fault/trap)
+    BX_BP_EXCEPTION = 3, // Breakpoint (trap)
+    BX_OF_EXCEPTION = 4, // Overflow (trap)
+    BX_BR_EXCEPTION = 5, // BOUND (fault)
+    BX_UD_EXCEPTION = 6,
+    BX_NM_EXCEPTION = 7,
+    BX_DF_EXCEPTION = 8,
+    BX_TS_EXCEPTION = 10,
+    BX_NP_EXCEPTION = 11,
+    BX_SS_EXCEPTION = 12,
+    BX_GP_EXCEPTION = 13,
+    BX_PF_EXCEPTION = 14,
+    BX_MF_EXCEPTION = 16,
+    BX_AC_EXCEPTION = 17,
+    BX_MC_EXCEPTION = 18,
+    BX_XM_EXCEPTION = 19,
+    BX_VE_EXCEPTION = 20,
+    BX_CP_EXCEPTION = 21 // Control Protection (fault)
+};
 
-enum class InstructionType
+enum class InstructionType : uint32_t
 {
     BX_INSTR_IS_JMP                 = BX_INSTR_IS_JMP,
     BOCHSCPU_INSTR_IS_JMP_INDIRECT  = BOCHSCPU_INSTR_IS_JMP_INDIRECT,
@@ -72,7 +98,7 @@ enum class InstructionType
 };
 
 
-enum class HookType
+enum class HookType : uint32_t
 {
     BOCHSCPU_HOOK_MEM_READ          = BOCHSCPU_HOOK_MEM_READ,
     BOCHSCPU_HOOK_MEM_WRITE         = BOCHSCPU_HOOK_MEM_WRITE,
@@ -94,6 +120,19 @@ enum class OpcodeOperationType
 {
     BOCHSCPU_OPCODE_ERROR    = BOCHSCPU_OPCODE_ERROR,
     BOCHSCPU_OPCODE_INSERTED = BOCHSCPU_OPCODE_INSERTED,
+};
+
+///
+/// @brief https://github.com/lubomyr/bochs/blob/8e0b9abcd81cd24d4d9c68f7fdef2f53bc180d33/cpu/cpu.h#L336
+///
+///
+enum class BochsCpuMode : uint32_t
+{
+    BX_MODE_IA32_REAL      = 0, // CR0.PE=0                |
+    BX_MODE_IA32_V8086     = 1, // CR0.PE=1, EFLAGS.VM=1   | EFER.LMA=0
+    BX_MODE_IA32_PROTECTED = 2, // CR0.PE=1, EFLAGS.VM=0   |
+    BX_MODE_LONG_COMPAT    = 3, // EFER.LMA = 1, CR0.PE=1, CS.L=0
+    BX_MODE_LONG_64        = 4  // EFER.LMA = 1, CR0.PE=1, CS.L=1
 };
 
 
@@ -302,11 +341,11 @@ struct CPU
 namespace Memory
 {
 
-enum class Access : int
+enum class Access : uint32_t
 {
-    Read    = 0,
-    Write   = 1,
-    Execute = 2,
+    Read    = BochsCPU::HookType::BOCHSCPU_HOOK_MEM_READ,
+    Write   = BochsCPU::HookType::BOCHSCPU_HOOK_MEM_WRITE,
+    Execute = BochsCPU::HookType::BOCHSCPU_HOOK_MEM_EXECUTE,
 };
 
 uintptr_t

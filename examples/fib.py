@@ -147,8 +147,15 @@ def missing_page_cb(gpa):
     raise Exception(f"missing_page_cb({gpa=:#x})")
 
 
-def exception_cb(sess: bochscpu.session, cpu_id: int, vector: int, error_code: int):
-    dbg(f"received exception({vector=:d}, {error_code=:d}) from cpu#{cpu_id}")
+def exception_cb(
+    sess: bochscpu.session,
+    cpu_id: int,
+    vector: bochscpu.cpu.ExceptionType,
+    error_code: bochscpu.InstructionType,
+):
+    match (vector, error_code):
+        case _:
+            dbg(f"cpu#{cpu_id} received exception({vector=:d}, {error_code=:d}) ")
     sess.stop()
 
 
@@ -352,9 +359,9 @@ loop:
     hlt
 """
 
-    cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
     code, _ = ks.asm(fib)
     assert isinstance(code, list)
     code = bytearray(code)
+    cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
     INSNS = [i for i in cs.disasm(code, 0)]
     emulate(code)
