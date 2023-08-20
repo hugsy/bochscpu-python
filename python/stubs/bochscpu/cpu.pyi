@@ -4,8 +4,10 @@ import bochscpu.cpu
 class ControlRegister:
     """
     ControlRegister class
-    @ref AMD Manual Vol 2 - 3-1
-    @ref AMD Manual Vol 2 - 3-7
+    @ref AMD Manual Vol 2 - 3-1 (CR0)
+    @ref AMD Manual Vol 2 - 3-7 (CR4)
+    @ref AMD Manual Vol 2 - 3-8 (RFLAGS)
+    @ref AMD Manual Vol 2 - 3-9 (EFER)
     """
 
     @property
@@ -466,19 +468,11 @@ class FlagRegister:
         """Set Nested Task R/W"""
         ...
     @property
-    def IOPL2(self) -> bool:
+    def IOPL(self) -> int:
         """Get IOPL I/O Privilege Level R/W"""
         ...
-    @IOPL2.setter
-    def IOPL2(self, value: bool) -> None:
-        """Set IOPL I/O Privilege Level R/W"""
-        ...
-    @property
-    def IOPL1(self) -> bool:
-        """Get IOPL I/O Privilege Level R/W"""
-        ...
-    @IOPL1.setter
-    def IOPL1(self, value: bool) -> None:
+    @IOPL.setter
+    def IOPL(self, value: int) -> None:
         """Set IOPL I/O Privilege Level R/W"""
         ...
     @property

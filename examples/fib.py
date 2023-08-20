@@ -28,6 +28,7 @@ def dbg(x: str):
 
 
 def mmap(sz: int = PAGE_SIZE, perm: str = "rw"):
+    assert platform.system() != "Windows"
     PROT_READ = 0x1
     PROT_WRITE = 0x2
     PROT_EXEC = 0x4
@@ -190,6 +191,15 @@ def emulate(code: bytes):
     cr4 = bochscpu.cpu.ControlRegister()
     cr4.PAE = True  # required for long mode
 
+    rflags = bochscpu.cpu.FlagRegister()
+    rflags.IOPL = 1
+
+    efer = bochscpu.cpu.FeatureRegister()
+    efer.NXE = True
+    efer.LMA = True
+    efer.LME = True
+    efer.SCE = True
+
     #
     # Manually craft the guest virtual & physical memory layout into a pagetable
     # Once done bind the resulting GPAs it to bochs
@@ -248,7 +258,8 @@ def emulate(code: bytes):
     state.cr0 = int(cr0)
     state.cr3 = pml4
     state.cr4 = int(cr4)
-    state.efer = 0xD01
+    state.efer = int(efer)
+    state.rflags = int(rflags)
     cs = bochscpu.Segment()
     cs.present = True
     cs.selector = 0x33

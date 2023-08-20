@@ -13,6 +13,7 @@ bochscpu_cpu_module(nb::module_& base_module)
 {
     auto m = base_module.def_submodule("cpu", "CPU module");
 
+#pragma region ControlRegister
     nb::enum_<BochsCPU::Cpu::ControlRegisterFlag>(m, "ControlRegisterFlag")
         // cr0
         .value("PG", BochsCPU::Cpu::ControlRegisterFlag::PG, "Paging R/W")
@@ -52,43 +53,6 @@ bochscpu_cpu_module(nb::module_& base_module)
         .value("VME", BochsCPU::Cpu::ControlRegisterFlag::VME, "Virtual-8086 Mode Extensions R/W")
         .export_values();
 
-    nb::enum_<BochsCPU::Cpu::FlagRegisterFlag>(m, "FlagRegisterFlag")
-        .value("ID", BochsCPU::Cpu::FlagRegisterFlag::ID, "ID Flag R/W")
-        .value("VIP", BochsCPU::Cpu::FlagRegisterFlag::VIP, "Virtual Interrupt Pending R/W")
-        .value("VIF", BochsCPU::Cpu::FlagRegisterFlag::VIF, "Virtual Interrupt Flag R/W")
-        .value("AC", BochsCPU::Cpu::FlagRegisterFlag::AC, "Alignment Check R/W")
-        .value("VM", BochsCPU::Cpu::FlagRegisterFlag::VM, "Virtual-8086 Mode R/W")
-        .value("RF", BochsCPU::Cpu::FlagRegisterFlag::RF, "Resume Flag R/W")
-        .value("Reserved4", BochsCPU::Cpu::FlagRegisterFlag::Reserved4, "Read as Zero")
-        .value("NT", BochsCPU::Cpu::FlagRegisterFlag::NT, "Nested Task R/W")
-        .value("IOPL2", BochsCPU::Cpu::FlagRegisterFlag::IOPL2, "IOPL I/O Privilege Level R/W")
-        .value("IOPL1", BochsCPU::Cpu::FlagRegisterFlag::IOPL1, "IOPL I/O Privilege Level R/W")
-        .value("OF", BochsCPU::Cpu::FlagRegisterFlag::OF, "Overflow Flag R/W")
-        .value("DF", BochsCPU::Cpu::FlagRegisterFlag::DF, "Direction Flag R/W")
-        .value("IF", BochsCPU::Cpu::FlagRegisterFlag::IF, "Interrupt Flag R/W")
-        .value("TF", BochsCPU::Cpu::FlagRegisterFlag::TF, "Trap Flag R/W")
-        .value("SF", BochsCPU::Cpu::FlagRegisterFlag::SF, "Sign Flag R/W")
-        .value("ZF", BochsCPU::Cpu::FlagRegisterFlag::ZF, "Zero Flag R/W")
-        .value("Reserved3", BochsCPU::Cpu::FlagRegisterFlag::Reserved3, "Read as Zero")
-        .value("AF", BochsCPU::Cpu::FlagRegisterFlag::AF, "Auxiliary Flag R/W")
-        .value("Reserved2", BochsCPU::Cpu::FlagRegisterFlag::Reserved2, "Read as Zero")
-        .value("PF", BochsCPU::Cpu::FlagRegisterFlag::PF, "Parity Flag R/W")
-        .value("Reserved1", BochsCPU::Cpu::FlagRegisterFlag::Reserved1, "Read as One")
-        .value("CF", BochsCPU::Cpu::FlagRegisterFlag::CF, "Carry Flag R/W")
-        .export_values();
-
-    nb::enum_<BochsCPU::Cpu::FeatureRegisterFlag>(m, "FeatureRegisterFlag")
-        .value("TCE", BochsCPU::Cpu::FeatureRegisterFlag::TCE, "Translation Cache Extension R/W")
-        .value("FFXSR", BochsCPU::Cpu::FeatureRegisterFlag::FFXSR, "Fast FXSAVE/FXRSTOR R/W")
-        .value("LMSLE", BochsCPU::Cpu::FeatureRegisterFlag::LMSLE, "Long Mode Segment Limit Enable R/W")
-        .value("SVME", BochsCPU::Cpu::FeatureRegisterFlag::SVME, "Secure Virtual Machine Enable R/W")
-        .value("NXE", BochsCPU::Cpu::FeatureRegisterFlag::NXE, "No-Execute Enable R/W")
-        .value("LMA", BochsCPU::Cpu::FeatureRegisterFlag::LMA, "Long Mode Active R/W")
-        .value("LME", BochsCPU::Cpu::FeatureRegisterFlag::LME, "Long Mode Enable R/W")
-        .value("SCE", BochsCPU::Cpu::FeatureRegisterFlag::SCE, "System Call Extensions R/W")
-        .export_values();
-
-#pragma region ControlRegister
     nb::class_<BochsCPU::Cpu::ControlRegister>(m, "ControlRegister")
         .def(nb::init<>())
         .def_prop_rw(
@@ -347,6 +311,31 @@ bochscpu_cpu_module(nb::module_& base_module)
 #pragma endregion
 
 #pragma region FlagRegistrer
+    nb::enum_<BochsCPU::Cpu::FlagRegisterFlag>(m, "FlagRegisterFlag")
+        .value("ID", BochsCPU::Cpu::FlagRegisterFlag::ID, "ID Flag R/W")
+        .value("VIP", BochsCPU::Cpu::FlagRegisterFlag::VIP, "Virtual Interrupt Pending R/W")
+        .value("VIF", BochsCPU::Cpu::FlagRegisterFlag::VIF, "Virtual Interrupt Flag R/W")
+        .value("AC", BochsCPU::Cpu::FlagRegisterFlag::AC, "Alignment Check R/W")
+        .value("VM", BochsCPU::Cpu::FlagRegisterFlag::VM, "Virtual-8086 Mode R/W")
+        .value("RF", BochsCPU::Cpu::FlagRegisterFlag::RF, "Resume Flag R/W")
+        .value("Reserved4", BochsCPU::Cpu::FlagRegisterFlag::Reserved4, "Read as Zero")
+        .value("NT", BochsCPU::Cpu::FlagRegisterFlag::NT, "Nested Task R/W")
+        .value("IOPL2", BochsCPU::Cpu::FlagRegisterFlag::IOPL2, "IOPL I/O Privilege Level R/W")
+        .value("IOPL1", BochsCPU::Cpu::FlagRegisterFlag::IOPL1, "IOPL I/O Privilege Level R/W")
+        .value("OF", BochsCPU::Cpu::FlagRegisterFlag::OF, "Overflow Flag R/W")
+        .value("DF", BochsCPU::Cpu::FlagRegisterFlag::DF, "Direction Flag R/W")
+        .value("IF", BochsCPU::Cpu::FlagRegisterFlag::IF, "Interrupt Flag R/W")
+        .value("TF", BochsCPU::Cpu::FlagRegisterFlag::TF, "Trap Flag R/W")
+        .value("SF", BochsCPU::Cpu::FlagRegisterFlag::SF, "Sign Flag R/W")
+        .value("ZF", BochsCPU::Cpu::FlagRegisterFlag::ZF, "Zero Flag R/W")
+        .value("Reserved3", BochsCPU::Cpu::FlagRegisterFlag::Reserved3, "Read as Zero")
+        .value("AF", BochsCPU::Cpu::FlagRegisterFlag::AF, "Auxiliary Flag R/W")
+        .value("Reserved2", BochsCPU::Cpu::FlagRegisterFlag::Reserved2, "Read as Zero")
+        .value("PF", BochsCPU::Cpu::FlagRegisterFlag::PF, "Parity Flag R/W")
+        .value("Reserved1", BochsCPU::Cpu::FlagRegisterFlag::Reserved1, "Read as One")
+        .value("CF", BochsCPU::Cpu::FlagRegisterFlag::CF, "Carry Flag R/W")
+        .export_values();
+
     nb::class_<BochsCPU::Cpu::FlagRegister>(m, "FlagRegister")
         .def(nb::init<>())
         .def_prop_rw(
@@ -575,6 +564,18 @@ bochscpu_cpu_module(nb::module_& base_module)
 #pragma endregion
 
 #pragma region FeatureRegister
+
+    nb::enum_<BochsCPU::Cpu::FeatureRegisterFlag>(m, "FeatureRegisterFlag")
+        .value("TCE", BochsCPU::Cpu::FeatureRegisterFlag::TCE, "Translation Cache Extension R/W")
+        .value("FFXSR", BochsCPU::Cpu::FeatureRegisterFlag::FFXSR, "Fast FXSAVE/FXRSTOR R/W")
+        .value("LMSLE", BochsCPU::Cpu::FeatureRegisterFlag::LMSLE, "Long Mode Segment Limit Enable R/W")
+        .value("SVME", BochsCPU::Cpu::FeatureRegisterFlag::SVME, "Secure Virtual Machine Enable R/W")
+        .value("NXE", BochsCPU::Cpu::FeatureRegisterFlag::NXE, "No-Execute Enable R/W")
+        .value("LMA", BochsCPU::Cpu::FeatureRegisterFlag::LMA, "Long Mode Active R/W")
+        .value("LME", BochsCPU::Cpu::FeatureRegisterFlag::LME, "Long Mode Enable R/W")
+        .value("SCE", BochsCPU::Cpu::FeatureRegisterFlag::SCE, "System Call Extensions R/W")
+        .export_values();
+
     nb::class_<BochsCPU::Cpu::FeatureRegister>(m, "FeatureRegister")
         .def(nb::init<>())
 
@@ -666,9 +667,12 @@ bochscpu_cpu_module(nb::module_& base_module)
                 fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::SCE, onoff);
             },
             "System Call Extensions R/W")
-
-
-        ;
+        .def(
+            "__int__",
+            [](BochsCPU::Cpu::FeatureRegister& fr)
+            {
+                return fr.to_ullong();
+            });
 #pragma endregion
 
     nb::class_<BochsCPU::Cpu::CPU>(m, "cpu")
