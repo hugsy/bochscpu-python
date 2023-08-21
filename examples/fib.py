@@ -8,15 +8,20 @@ import capstone
 import keystone
 
 import bochscpu
+import bochscpu.cpu
+import bochscpu.memory
 
 DEBUG = True
 PAGE_SIZE = bochscpu.memory.PageSize()
 
 
-@dataclasses.dataclass
 class Stats:
     insn_nb: int = 0
-    mem_access: list[int] = dataclasses.field(default_factory=lambda: [0, 0, 0])
+    mem_access: dict[bochscpu.memory.AccessType, int] = {
+        bochscpu.memory.AccessType.Read: 0,
+        bochscpu.memory.AccessType.Write: 0,
+        bochscpu.memory.AccessType.Execute: 0,
+    }
 
 
 stats = Stats()
@@ -28,6 +33,7 @@ def dbg(x: str):
 
 
 def mmap(sz: int = PAGE_SIZE, perm: str = "rw"):
+    assert platform.system() != "Windows"
     PROT_READ = 0x1
     PROT_WRITE = 0x2
     PROT_EXEC = 0x4
@@ -36,7 +42,14 @@ def mmap(sz: int = PAGE_SIZE, perm: str = "rw"):
     libc = ctypes.CDLL("libc.so.6")
     mmap = libc.mmap
     mmap.restype = ctypes.c_void_p
-    mmap.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_long]
+    mmap.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_size_t,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_long,
+    ]
     flags = 0
     match perm:
         case "ro":
@@ -44,7 +57,7 @@ def mmap(sz: int = PAGE_SIZE, perm: str = "rw"):
         case "rw":
             flags = PROT_READ | PROT_WRITE
         case "rwx":
-            flags = PROT_READ | PROT_WRITE | PROT_EXECUTE
+            flags = PROT_READ | PROT_WRITE | PROT_EXEC
         case _:
             raise ValueError
     return mmap(-1, sz, flags, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)
@@ -85,7 +98,7 @@ def VirtualAlloc(sz: int = PAGE_SIZE, perm: str = "rw"):
 def dump_page_table(addr: int, level: int = 0):
     level_str = ("PML", "PDPT", "PD", "PT")
     if level == 4:
-        data = bytes(bochscpu.bochscpu_mem_phy_read(addr, 8))
+        data = bytes(bochscpu.memory.phy_read(addr, 8))
         entry = struct.unpack("<Q", data[:8])[0] & ~0xFFF
         print(f"{' '*level} {entry:#x}")
         return
@@ -93,7 +106,7 @@ def dump_page_table(addr: int, level: int = 0):
     print(f"Dumping {level_str[level]} @ {addr:#x}")
 
     for i in range(0, PAGE_SIZE, 8):
-        data = bytes(bochscpu.bochscpu_mem_phy_read(addr + i, 8))
+        data = bytes(bochscpu.memory.phy_read(addr + i, 8))
         entry = struct.unpack("<Q", data[:8])[0]
         flags = entry & 0xFFF
         entry = entry & ~0xFFF
@@ -134,8 +147,15 @@ def missing_page_cb(gpa):
     raise Exception(f"missing_page_cb({gpa=:#x})")
 
 
-def exception_cb(sess: bochscpu.session, cpu_id: int, vector: int, error_code: int):
-    dbg(f"received exception({vector=:d}, {error_code=:d}) from cpu#{cpu_id}")
+def exception_cb(
+    sess: bochscpu.session,
+    cpu_id: int,
+    vector: bochscpu.cpu.ExceptionType,
+    error_code: bochscpu.InstructionType,
+):
+    match (vector, error_code):
+        case _:
+            dbg(f"cpu#{cpu_id} received exception({vector=:d}, {error_code=:d}) ")
     sess.stop()
 
 
@@ -183,6 +203,15 @@ def emulate(code: bytes):
     cr4 = bochscpu.cpu.ControlRegister()
     cr4.PAE = True  # required for long mode
 
+    rflags = bochscpu.cpu.FlagRegister()
+    rflags.IOPL = 1
+
+    efer = bochscpu.cpu.FeatureRegister()
+    efer.NXE = True
+    efer.LMA = True
+    efer.LME = True
+    efer.SCE = True
+
     #
     # Manually craft the guest virtual & physical memory layout into a pagetable
     # Once done bind the resulting GPAs it to bochs
@@ -191,13 +220,13 @@ def emulate(code: bytes):
     shellcode_gva = 0x0400_0000
     shellcode_gpa = 0x1400_0000
     dbg(f"inserting {shellcode_gva=:#x} -> {shellcode_gpa=:#x} ->  {shellcode_hva=:#x}")
-    bochscpu.bochscpu_mem_page_insert(shellcode_gpa, shellcode_hva)
+    bochscpu.memory.page_insert(shellcode_gpa, shellcode_hva)
 
     stack_hva = VirtualAlloc()
     stack_gva = 0x0401_0000
     stack_gpa = 0x1401_0000
     dbg(f"inserting {stack_gva=:#x} -> {stack_gpa=:#x} -> {stack_hva=:#x}")
-    bochscpu.bochscpu_mem_page_insert(stack_gpa, stack_hva)
+    bochscpu.memory.page_insert(stack_gpa, stack_hva)
 
     pt = bochscpu.memory.PageMapLevel4Table()
     pt.Insert(stack_gva, stack_gpa, RW)
@@ -210,21 +239,21 @@ def emulate(code: bytes):
     layout = pt.Commit(pml4)
 
     for hva, gpa in layout:
-        bochscpu.bochscpu_mem_page_insert(gpa, hva)
-        evaled_gpa = bochscpu.bochscpu_mem_phy_translate(gpa)
+        bochscpu.memory.page_insert(gpa, hva)
+        evaled_gpa = bochscpu.memory.phy_translate(gpa)
         assert evaled_gpa == hva, f"{evaled_gpa=:#x} == {hva=:#x}"
 
-    evaled_gpa = bochscpu.bochscpu_mem_virt_translate(pml4, shellcode_gva)
+    evaled_gpa = bochscpu.memory.virt_translate(pml4, shellcode_gva)
     assert evaled_gpa == shellcode_gpa, f"{evaled_gpa=:#x} != {shellcode_gpa=:#x}"
-    evaled_gpa = bochscpu.bochscpu_mem_virt_translate(pml4, stack_gva)
+    evaled_gpa = bochscpu.memory.virt_translate(pml4, stack_gva)
     assert evaled_gpa == stack_gpa, f"{evaled_gpa=:#x} != {stack_gpa=:#x}"
 
     # dump_page_table(pml4)
 
     dbg(f"copy code to {shellcode_gva=:#x}")
-    assert bochscpu.bochscpu_mem_virt_write(pml4, shellcode_gva, bytes(code))
+    assert bochscpu.memory.virt_write(pml4, shellcode_gva, bytes(code))
     dbg(f"copied to {shellcode_gva=:#x}, testing...")
-    data = bochscpu.bochscpu_mem_virt_read(pml4, shellcode_gva, len(code))
+    data = bochscpu.memory.virt_read(pml4, shellcode_gva, len(code))
     assert data
     assert bytes(data) == bytes(code), f"{bytes(data).hex()} != {bytes(code).hex()}"
     dbg("success")
@@ -241,7 +270,8 @@ def emulate(code: bytes):
     state.cr0 = int(cr0)
     state.cr3 = pml4
     state.cr4 = int(cr4)
-    state.efer = 0xD01
+    state.efer = int(efer)
+    state.rflags = int(rflags)
     cs = bochscpu.Segment()
     cs.present = True
     cs.selector = 0x33
@@ -277,9 +307,13 @@ def emulate(code: bytes):
     t1 = time.time_ns()
     sess.run(hooks)
     t2 = time.time_ns()
-    dbg(f"vm stopped, execution: {stats.insn_nb} insns in {t2-t1}ns")
     dbg(
-        f"mem accesses: read={stats.mem_access[0]} write={stats.mem_access[1]} execute={stats.mem_access[2]}"
+        f"vm stopped, execution: {stats.insn_nb} insns in {t2-t1}ns (~{int(stats.insn_nb // ((t2-t1)/1_000_000_000))}) insn/s"
+    )
+    dbg(
+        f"mem accesses: read={stats.mem_access[bochscpu.memory.AccessType.Read]} "
+        f"write={stats.mem_access[bochscpu.memory.AccessType.Write]} "
+        f"execute={stats.mem_access[bochscpu.memory.AccessType.Execute]}"
     )
 
     if stats.insn_nb < len(INSNS):
@@ -325,9 +359,9 @@ loop:
     hlt
 """
 
-    cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
     code, _ = ks.asm(fib)
     assert isinstance(code, list)
     code = bytearray(code)
+    cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
     INSNS = [i for i in cs.disasm(code, 0)]
     emulate(code)

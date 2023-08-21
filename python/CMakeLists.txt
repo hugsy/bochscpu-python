@@ -34,6 +34,7 @@ else()
 endif()
 
 install(TARGETS bochscpu LIBRARY DESTINATION .)
+install(DIRECTORY bochscpu-stubs DESTINATION .) # Folder name must be *-stubs, see PEP 561
 
 if(MSVC)
     install(FILES $<TARGET_PDB_FILE:bochscpu> DESTINATION . OPTIONAL)

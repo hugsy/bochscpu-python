@@ -55,37 +55,84 @@
 
 namespace BochsCPU
 {
-
-struct Session;
-
-struct Hook
+///
+/// @brief Src https://github.com/lubomyr/bochs/blob/8e0b9abcd81cd24d4d9c68f7fdef2f53bc180d33/cpu/cpu.h#L306
+///
+///
+enum class BochsException : uint32_t
 {
-    void* ctx {nullptr};
-    std::function<void(Session*, uint32_t, void*)> before_execution;
-    std::function<void(Session*, uint32_t, void*)> after_execution;
-    std::function<void(Session*, uint32_t, unsigned int)> reset;
-    std::function<void(Session*, uint32_t)> hlt;
-    std::function<void(Session*, uint32_t, uint64_t, uintptr_t, uint32_t)> mwait;
-    std::function<void(Session*, uint32_t, uint64_t, uint64_t)> cnear_branch_taken;
-    std::function<void(Session*, uint32_t, uint64_t, uint64_t)> cnear_branch_not_taken;
-    std::function<void(Session*, uint32_t, unsigned, uint64_t, uint64_t)> ucnear_branch;
-    std::function<void(Session*, uint32_t, uint32_t, uint16_t, uint64_t, uint16_t, uint64_t)> far_branch;
-    std::function<void(Session*, uint32_t, uint32_t, uint64_t)> vmexit;
-    std::function<void(Session*, uint32_t, unsigned)> interrupt;
-    std::function<void(Session*, uint32_t, unsigned, uint16_t, uint64_t)> hw_interrupt;
-    std::function<void(Session*, uint32_t, uint64_t, uint64_t)> clflush;
-    std::function<void(Session*, uint32_t, unsigned, uint64_t)> tlb_cntrl;
-    std::function<void(Session*, uint32_t, unsigned)> cache_cntrl;
-    std::function<void(Session*, uint32_t, unsigned, unsigned, uint64_t)> prefetch_hint;
-    std::function<void(Session*, uint32_t, unsigned, uint64_t)> wrmsr;
-    std::function<void(Session*, uint32_t, void*)> repeat_iteration;
-    std::function<void(Session*, uint32_t, uint64_t, uint64_t, uintptr_t, uint32_t, uint32_t)> lin_access;
-    std::function<void(Session*, uint32_t, uint64_t, uint64_t, uintptr_t, unsigned)> phy_access;
-    std::function<void(Session*, uint16_t, uintptr_t)> inp;
-    std::function<void(Session*, uint16_t, uintptr_t, unsigned)> inp2;
-    std::function<void(Session*, uint16_t, uintptr_t, unsigned)> outp;
-    std::function<void(Session*, uint32_t, void*, uint8_t*, uintptr_t, bool, bool)> opcode;
-    std::function<void(Session*, uint32_t, unsigned, unsigned)> exception;
+    BX_DE_EXCEPTION = 0, // Divide Error (fault)
+    BX_DB_EXCEPTION = 1, // Debug (fault/trap)
+    BX_BP_EXCEPTION = 3, // Breakpoint (trap)
+    BX_OF_EXCEPTION = 4, // Overflow (trap)
+    BX_BR_EXCEPTION = 5, // BOUND (fault)
+    BX_UD_EXCEPTION = 6,
+    BX_NM_EXCEPTION = 7,
+    BX_DF_EXCEPTION = 8,
+    BX_TS_EXCEPTION = 10,
+    BX_NP_EXCEPTION = 11,
+    BX_SS_EXCEPTION = 12,
+    BX_GP_EXCEPTION = 13,
+    BX_PF_EXCEPTION = 14,
+    BX_MF_EXCEPTION = 16,
+    BX_AC_EXCEPTION = 17,
+    BX_MC_EXCEPTION = 18,
+    BX_XM_EXCEPTION = 19,
+    BX_VE_EXCEPTION = 20,
+    BX_CP_EXCEPTION = 21 // Control Protection (fault)
+};
+
+enum class InstructionType : uint32_t
+{
+    BX_INSTR_IS_JMP                 = BX_INSTR_IS_JMP,
+    BOCHSCPU_INSTR_IS_JMP_INDIRECT  = BOCHSCPU_INSTR_IS_JMP_INDIRECT,
+    BOCHSCPU_INSTR_IS_CALL          = BOCHSCPU_INSTR_IS_CALL,
+    BOCHSCPU_INSTR_IS_CALL_INDIRECT = BOCHSCPU_INSTR_IS_CALL_INDIRECT,
+    BOCHSCPU_INSTR_IS_RET           = BOCHSCPU_INSTR_IS_RET,
+    BOCHSCPU_INSTR_IS_IRET          = BOCHSCPU_INSTR_IS_IRET,
+    BOCHSCPU_INSTR_IS_INT           = BOCHSCPU_INSTR_IS_INT,
+    BOCHSCPU_INSTR_IS_SYSCALL       = BOCHSCPU_INSTR_IS_SYSCALL,
+    BOCHSCPU_INSTR_IS_SYSRET        = BOCHSCPU_INSTR_IS_SYSRET,
+    BOCHSCPU_INSTR_IS_SYSENTER      = BOCHSCPU_INSTR_IS_SYSENTER,
+    BOCHSCPU_INSTR_IS_SYSEXIT       = BOCHSCPU_INSTR_IS_SYSEXIT,
+};
+
+
+enum class HookType : uint32_t
+{
+    BOCHSCPU_HOOK_MEM_READ          = BOCHSCPU_HOOK_MEM_READ,
+    BOCHSCPU_HOOK_MEM_WRITE         = BOCHSCPU_HOOK_MEM_WRITE,
+    BOCHSCPU_HOOK_MEM_EXECUTE       = BOCHSCPU_HOOK_MEM_EXECUTE,
+    BOCHSCPU_HOOK_MEM_RW            = BOCHSCPU_HOOK_MEM_RW,
+    BOCHSCPU_HOOK_TLB_CR0           = BOCHSCPU_HOOK_TLB_CR0,
+    BOCHSCPU_HOOK_TLB_CR3           = BOCHSCPU_HOOK_TLB_CR3,
+    BOCHSCPU_HOOK_TLB_CR4           = BOCHSCPU_HOOK_TLB_CR4,
+    BOCHSCPU_HOOK_TLB_TASKSWITCH    = BOCHSCPU_HOOK_TLB_TASKSWITCH,
+    BOCHSCPU_HOOK_TLB_CONTEXTSWITCH = BOCHSCPU_HOOK_TLB_CONTEXTSWITCH,
+    BOCHSCPU_HOOK_TLB_INVLPG        = BOCHSCPU_HOOK_TLB_INVLPG,
+    BOCHSCPU_HOOK_TLB_INVEPT        = BOCHSCPU_HOOK_TLB_INVEPT,
+    BOCHSCPU_HOOK_TLB_INVVPID       = BOCHSCPU_HOOK_TLB_INVVPID,
+    BOCHSCPU_HOOK_TLB_INVPCID       = BOCHSCPU_HOOK_TLB_INVPCID,
+};
+
+
+enum class OpcodeOperationType
+{
+    BOCHSCPU_OPCODE_ERROR    = BOCHSCPU_OPCODE_ERROR,
+    BOCHSCPU_OPCODE_INSERTED = BOCHSCPU_OPCODE_INSERTED,
+};
+
+///
+/// @brief https://github.com/lubomyr/bochs/blob/8e0b9abcd81cd24d4d9c68f7fdef2f53bc180d33/cpu/cpu.h#L336
+///
+///
+enum class BochsCpuMode : uint32_t
+{
+    BX_MODE_IA32_REAL      = 0, // CR0.PE=0                |
+    BX_MODE_IA32_V8086     = 1, // CR0.PE=1, EFLAGS.VM=1   | EFER.LMA=0
+    BX_MODE_IA32_PROTECTED = 2, // CR0.PE=1, EFLAGS.VM=0   |
+    BX_MODE_LONG_COMPAT    = 3, // EFER.LMA = 1, CR0.PE=1, CS.L=0
+    BX_MODE_LONG_64        = 4  // EFER.LMA = 1, CR0.PE=1, CS.L=1
 };
 
 
@@ -178,13 +225,9 @@ exception_cb(context_t* ctx, uint32_t cpu_id, unsigned vector, unsigned error_co
 namespace Cpu
 {
 
-struct ControlRegister : std::bitset<64>
-{
-};
-
 enum class ControlRegisterFlag : uint64_t
 {
-    /// CR0 - 3.1.1
+    /// CR0 - - AMD Manual Vol2 - 3.1.1
     PG = 31, // Paging R/W
     CD = 30, // Cache Disable R/W
     NW = 29, // Not Writethrough R/W
@@ -198,7 +241,7 @@ enum class ControlRegisterFlag : uint64_t
     PE = 0,  // Protection Enabled R/W
 
 
-    /// CR4 - 3.7.1
+    /// CR4 - - AMD Manual Vol2 - 3.7.1
     OSXSAVE    = 18, // XSAVE and Processor Extended States Enable Bit R/W
     FSGSBASE   = 16, // Enable RDFSBASE, RDGSBASE, WRFSBASE, and WRGSBASE instructions R/W
     OSXMMEXCPT = 10, // Operating System Unmasked Exception Support R/W
@@ -212,6 +255,62 @@ enum class ControlRegisterFlag : uint64_t
     TSD        = 2,  // Time Stamp Disable R/W
     PVI        = 1,  // Protected-Mode Virtual Interrupts R/W
     VME        = 0,  // Virtual-8086 Mode Extensions R/W
+};
+
+enum class FlagRegisterFlag : uint64_t
+{
+    // RFLAGS - AMD Manual Vol2 - 3.8
+    ID        = 21, // ID Flag R/W
+    VIP       = 20, // Virtual Interrupt Pending R/W
+    VIF       = 19, // Virtual Interrupt Flag R/W
+    AC        = 18, // Alignment Check R/W
+    VM        = 17, // Virtual-8086 Mode R/W
+    RF        = 16, // Resume Flag R/W
+    Reserved4 = 15, // Read as Zero
+    NT        = 14, // Nested Task R/W
+    IOPL2     = 13, // IOPL I/O Privilege Level R/W
+    IOPL1     = 12, // IOPL I/O Privilege Level R/W
+    OF        = 11, // Overflow Flag R/W
+    DF        = 10, // Direction Flag R/W
+    IF        = 9,  // Interrupt Flag R/W
+    TF        = 8,  // Trap Flag R/W
+    SF        = 7,  // Sign Flag R/W
+    ZF        = 6,  // Zero Flag R/W
+    Reserved3 = 5,  // Read as Zero
+    AF        = 4,  // Auxiliary Flag R/W
+    Reserved2 = 3,  // Read as Zero
+    PF        = 2,  // Parity Flag R/W
+    Reserved1 = 1,  // Read as One
+    CF        = 0,  // Carry Flag R/W
+};
+
+enum class FeatureRegisterFlag : uint64_t
+{
+    TCE   = 15, // Translation Cache Extension R/W
+    FFXSR = 14, // Fast FXSAVE/FXRSTOR R/W
+    LMSLE = 13, // Long Mode Segment Limit Enable R/W
+    SVME  = 12, // Secure Virtual Machine Enable R/W
+    NXE   = 11, // No-Execute Enable R/W
+    LMA   = 10, // Long Mode Active R/W
+    LME   = 8,  // Long Mode Enable R/W
+    SCE   = 0,  // System Call Extensions R/W
+};
+
+struct ControlRegister : std::bitset<64>
+{
+};
+
+
+struct FlagRegister : std::bitset<64>
+{
+    FlagRegister()
+    {
+        set((int)FlagRegisterFlag::Reserved1, true);
+    }
+};
+
+struct FeatureRegister : std::bitset<64>
+{
 };
 
 
@@ -242,11 +341,11 @@ struct CPU
 namespace Memory
 {
 
-enum class Access : int
+enum class Access : uint32_t
 {
-    Read    = 0,
-    Write   = 1,
-    Execute = 2,
+    Read    = (uint32_t)BochsCPU::HookType::BOCHSCPU_HOOK_MEM_READ,
+    Write   = (uint32_t)BochsCPU::HookType::BOCHSCPU_HOOK_MEM_WRITE,
+    Execute = (uint32_t)BochsCPU::HookType::BOCHSCPU_HOOK_MEM_EXECUTE,
 };
 
 uintptr_t
@@ -433,6 +532,37 @@ struct Session
 
     std::function<void(uint64_t)> missing_page_handler;
     BochsCPU::Cpu::CPU cpu {};
+};
+
+
+struct Hook
+{
+    void* ctx {nullptr};
+    std::function<void(Session*, uint32_t, void*)> before_execution;
+    std::function<void(Session*, uint32_t, void*)> after_execution;
+    std::function<void(Session*, uint32_t, unsigned int)> reset;
+    std::function<void(Session*, uint32_t)> hlt;
+    std::function<void(Session*, uint32_t, uint64_t, uintptr_t, uint32_t)> mwait;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t)> cnear_branch_taken;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t)> cnear_branch_not_taken;
+    std::function<void(Session*, uint32_t, unsigned, uint64_t, uint64_t)> ucnear_branch;
+    std::function<void(Session*, uint32_t, uint32_t, uint16_t, uint64_t, uint16_t, uint64_t)> far_branch;
+    std::function<void(Session*, uint32_t, uint32_t, uint64_t)> vmexit;
+    std::function<void(Session*, uint32_t, unsigned)> interrupt;
+    std::function<void(Session*, uint32_t, unsigned, uint16_t, uint64_t)> hw_interrupt;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t)> clflush;
+    std::function<void(Session*, uint32_t, unsigned, uint64_t)> tlb_cntrl;
+    std::function<void(Session*, uint32_t, unsigned)> cache_cntrl;
+    std::function<void(Session*, uint32_t, unsigned, unsigned, uint64_t)> prefetch_hint;
+    std::function<void(Session*, uint32_t, unsigned, uint64_t)> wrmsr;
+    std::function<void(Session*, uint32_t, void*)> repeat_iteration;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t, uintptr_t, uint32_t, uint32_t)> lin_access;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t, uintptr_t, unsigned)> phy_access;
+    std::function<void(Session*, uint16_t, uintptr_t)> inp;
+    std::function<void(Session*, uint16_t, uintptr_t, unsigned)> inp2;
+    std::function<void(Session*, uint16_t, uintptr_t, unsigned)> outp;
+    std::function<void(Session*, uint32_t, void*, uint8_t*, uintptr_t, bool, bool)> opcode;
+    std::function<void(Session*, uint32_t, unsigned, unsigned)> exception;
 };
 
 
