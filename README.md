@@ -1,7 +1,7 @@
 # bochscpu-python
 
-![python 3](https://img.shields.io/badge/python-3.8+-cyan)
-![Python 3.8+](https://img.shields.io/pypi/v/bochscpu-python.svg)
+[![python 3](https://img.shields.io/badge/python-3.8+-cyan)](https://python.org)
+[![Python 3.8+](https://img.shields.io/pypi/v/bochscpu-python.svg)](https://pypi.org/project/bochscpu-python/)
 [![Downloads](https://static.pepy.tech/badge/bochscpu-python)](https://pepy.tech/project/bochscpu-python)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) 
 [![Licence MIT](https://img.shields.io/packagist/l/doctrine/orm.svg?maxAge=2592000?style=plastic)](https://github.com/hugsy/bochscpu-python/blob/main/LICENSE)
