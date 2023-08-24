@@ -6,9 +6,20 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/vector.h>
 
+#include <mutex>
 #include <span>
 
 #include "bochscpu.hpp"
+
+///
+/// @brief Protects `g_GlobalPageAllocation`
+///
+static std::mutex g_GlobalPageMutex;
+
+///
+/// @brief Keep track of the allocated pages on the host so we can deallocate them on exit
+///
+static std::vector<uint64_t> g_GlobalPageAllocation;
 
 namespace nb = nanobind;
 using namespace nb::literals;
@@ -26,8 +37,8 @@ bochscpu_memory_module(nb::module_& base_module)
         .value("Write", BochsCPU::Memory::Access::Write)
         .value("Execute", BochsCPU::Memory::Access::Execute);
 
-    m.def("PageSize", &BochsCPU::Memory::PageSize);
-    m.def("AlignAddressToPage", &BochsCPU::Memory::AlignAddressToPage);
+    m.def("page_size", &BochsCPU::Memory::PageSize);
+    m.def("align_address_to_page", &BochsCPU::Memory::AlignAddressToPage);
 
     m.def(
         "page_insert",
@@ -82,29 +93,54 @@ bochscpu_memory_module(nb::module_& base_module)
         {
             std::vector<uint8_t> hva(sz);
             if ( ::bochscpu_mem_virt_read(cr3, gva, hva.data(), hva.size()) )
+            {
                 throw std::runtime_error("invalid access");
+            }
             return hva;
         },
         "cr3"_a,
         "gva"_a,
         "sz"_a,
         "Read from GVA");
+    m.def(
+        "allocate_host_page",
+        []() -> uint64_t
+        {
+            uint64_t addr = BochsCPU::Memory::AllocatePage();
+            if ( !addr )
+            {
+                throw std::runtime_error("page allocation failed");
+            }
+            return addr;
+        },
+        "Allocate a page on the host, returns the HVA on success, 0 otherwise");
+    m.def("release_host_page", &BochsCPU::Memory::FreePage, "hva"_a, "Release a page on the host");
 
     nb::class_<BochsCPU::Memory::PageMapLevel4Table>(m, "PageMapLevel4Table")
         .def(nb::init<>())
-        .def("Translate", &BochsCPU::Memory::PageMapLevel4Table::Translate, "Translate a VA -> PA")
-        .def("Insert", &BochsCPU::Memory::PageMapLevel4Table::Insert, "Associate the VA to PA")
-        .def("Commit", &BochsCPU::Memory::PageMapLevel4Table::Commit, "Commit the layout of the tree to memory");
+        .def("translate", &BochsCPU::Memory::PageMapLevel4Table::Translate, "gva"_a, "Translate a VA -> PA")
+        .def(
+            "insert",
+            &BochsCPU::Memory::PageMapLevel4Table::Insert,
+            "va"_a,
+            "pa"_a,
+            "flags"_a,
+            "Associate the VA to PA")
+        .def(
+            "commit",
+            &BochsCPU::Memory::PageMapLevel4Table::Commit,
+            "pml4_pa"_a,
+            "Commit the layout of the tree to memory");
 }
 
 namespace BochsCPU::Memory
 {
 
-
 uintptr_t
 PageSize()
 {
     return 0x1000;
+    // TODO: handle 2MB & 1GB pages, see Vol 2 5.1
 }
 
 
@@ -119,10 +155,17 @@ uint64_t
 AllocatePage()
 {
 #if defined(_WIN32)
-    return (uint64_t)::VirtualAlloc(nullptr, Memory::PageSize(), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    auto addr = (uint64_t)::VirtualAlloc(nullptr, Memory::PageSize(), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 #else
-    return (uint64_t)::mmap(nullptr, Memory::PageSize(), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    auto addr =
+        (uint64_t)::mmap(nullptr, Memory::PageSize(), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #endif // _WIN32
+    if ( addr )
+    {
+        std::lock_guard<std::mutex> scoped_lock(g_GlobalPageMutex);
+        g_GlobalPageAllocation.push_back(addr);
+    }
+    return addr;
 }
 
 
@@ -130,15 +173,26 @@ bool
 FreePage(uint64_t addr)
 {
 #if defined(_WIN32)
-    return ::VirtualFree((LPVOID)addr, 0, MEM_RELEASE) == TRUE;
+    bool res = ::VirtualFree((LPVOID)addr, 0, MEM_RELEASE) == TRUE;
 #else
-    return ::munmap((void*)addr, Memory::PageSize()) == 0;
+    bool res = ::munmap((void*)addr, Memory::PageSize()) == 0;
 #endif // _WIN32
+    if ( res )
+    {
+        std::lock_guard<std::mutex> scoped_lock(g_GlobalPageMutex);
+        std::erase_if(
+            g_GlobalPageAllocation,
+            [addr](uint64_t cur_addr)
+            {
+                return cur_addr == addr;
+            });
+    }
+    return res;
 }
 
 
 //
-// shamelessly ported from yrp's rust implem, because it was late and I wanted to finish
+// shameless port of @yrp's rust implementation, because it was late and I wanted to finish
 // kudos to him
 //
 

@@ -1,6 +1,3 @@
-import ctypes
-import dataclasses
-import platform
 import struct
 import time
 
@@ -8,11 +5,11 @@ import capstone
 import keystone
 
 import bochscpu
-import bochscpu.cpu
-import bochscpu.memory
+import bochscpu.cpu # type: ignore
+import bochscpu.memory # type: ignore
 
 DEBUG = True
-PAGE_SIZE = bochscpu.memory.PageSize()
+PAGE_SIZE = bochscpu.memory.page_size()
 
 
 class Stats:
@@ -30,69 +27,6 @@ stats = Stats()
 def dbg(x: str):
     if DEBUG:
         print(f"[Py] {x}")
-
-
-def mmap(sz: int = PAGE_SIZE, perm: str = "rw"):
-    assert platform.system() != "Windows"
-    PROT_READ = 0x1
-    PROT_WRITE = 0x2
-    PROT_EXEC = 0x4
-    MAP_PRIVATE = 0x2
-    MAP_ANONYMOUS = 0x20
-    libc = ctypes.CDLL("libc.so.6")
-    mmap = libc.mmap
-    mmap.restype = ctypes.c_void_p
-    mmap.argtypes = [
-        ctypes.c_void_p,
-        ctypes.c_size_t,
-        ctypes.c_int,
-        ctypes.c_int,
-        ctypes.c_int,
-        ctypes.c_long,
-    ]
-    flags = 0
-    match perm:
-        case "ro":
-            flags = PROT_READ
-        case "rw":
-            flags = PROT_READ | PROT_WRITE
-        case "rwx":
-            flags = PROT_READ | PROT_WRITE | PROT_EXEC
-        case _:
-            raise ValueError
-    return mmap(-1, sz, flags, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)
-
-
-def VirtualAlloc(sz: int = PAGE_SIZE, perm: str = "rw"):
-    if platform.system() == "Linux":
-        return mmap(sz, perm)
-    MEM_COMMIT = 0x1000
-    MEM_RESERVE = 0x2000
-    PAGE_NOACCESS = 0x01
-    PAGE_READONLY = 0x02
-    PAGE_READWRITE = 0x04
-    PAGE_EXECUTE_READWRITE = 0x40
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-    VirtualAlloc = kernel32.VirtualAlloc
-    VirtualAlloc.argtypes = [
-        ctypes.c_void_p,
-        ctypes.c_size_t,
-        ctypes.c_ulong,
-        ctypes.c_ulong,
-    ]
-    VirtualAlloc.restype = ctypes.c_void_p
-    flags = PAGE_NOACCESS
-    match perm:
-        case "ro":
-            flags = PAGE_READONLY
-        case "rw":
-            flags = PAGE_READWRITE
-        case "rwx":
-            flags = PAGE_EXECUTE_READWRITE
-        case _:
-            raise ValueError
-
-    return VirtualAlloc(None, sz, MEM_COMMIT | MEM_RESERVE, flags)
 
 
 def dump_page_table(addr: int, level: int = 0):
@@ -192,6 +126,8 @@ def emulate(code: bytes):
     #
     # Setup control registers to enable PG/PE and long mode
     #
+    # AMD Vol 2 - 14.8 Long-Mode Initialization Example
+    #
     cr0 = bochscpu.cpu.ControlRegister()
     cr0.PG = True
     cr0.AM = True
@@ -216,27 +152,27 @@ def emulate(code: bytes):
     # Manually craft the guest virtual & physical memory layout into a pagetable
     # Once done bind the resulting GPAs it to bochs
     #
-    shellcode_hva = VirtualAlloc()
+    shellcode_hva = bochscpu.memory.allocate_host_page()
     shellcode_gva = 0x0400_0000
     shellcode_gpa = 0x1400_0000
     dbg(f"inserting {shellcode_gva=:#x} -> {shellcode_gpa=:#x} ->  {shellcode_hva=:#x}")
     bochscpu.memory.page_insert(shellcode_gpa, shellcode_hva)
 
-    stack_hva = VirtualAlloc()
+    stack_hva = bochscpu.memory.allocate_host_page()
     stack_gva = 0x0401_0000
     stack_gpa = 0x1401_0000
     dbg(f"inserting {stack_gva=:#x} -> {stack_gpa=:#x} -> {stack_hva=:#x}")
     bochscpu.memory.page_insert(stack_gpa, stack_hva)
 
     pt = bochscpu.memory.PageMapLevel4Table()
-    pt.Insert(stack_gva, stack_gpa, RW)
-    pt.Insert(shellcode_gva, shellcode_gpa, CODE)
+    pt.insert(stack_gva, stack_gpa, RW)
+    pt.insert(shellcode_gva, shellcode_gpa, CODE)
 
-    assert pt.Translate(stack_gva) == stack_gpa
-    assert pt.Translate(shellcode_gva) == shellcode_gpa
+    assert pt.translate(stack_gva) == stack_gpa
+    assert pt.translate(shellcode_gva) == shellcode_gpa
 
     pml4 = 0x10_0000
-    layout = pt.Commit(pml4)
+    layout = pt.commit(pml4)
 
     for hva, gpa in layout:
         bochscpu.memory.page_insert(gpa, hva)
@@ -325,6 +261,9 @@ def emulate(code: bytes):
     new_state = sess.cpu.state
     dbg("dumping final state")
     dump_registers(new_state)
+
+    bochscpu.memory.release_host_page(stack_hva)
+    bochscpu.memory.release_host_page(shellcode_hva)
     return
 
 
