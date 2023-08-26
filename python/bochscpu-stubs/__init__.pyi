@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, overload
+from typing import Callable
 from enum import Enum
 import bochscpu
 import bochscpu.cpu

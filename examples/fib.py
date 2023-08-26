@@ -5,8 +5,10 @@ import capstone
 import keystone
 
 import bochscpu
-import bochscpu.cpu # type: ignore
-import bochscpu.memory # type: ignore
+import bochscpu.cpu
+import bochscpu.memory
+import bochscpu.utils
+
 
 DEBUG = True
 PAGE_SIZE = bochscpu.memory.page_size()
@@ -48,33 +50,6 @@ def dump_page_table(addr: int, level: int = 0):
             continue
         print(f"{' '*level} #{i//8} - {hex(entry)}|{flags=:#x}")
         dump_page_table(entry, level + 1)
-
-
-def dump_registers(state: bochscpu.State, type: int = 0):
-    # UM
-    print(
-        f"""
-rax={state.rax:016x} rbx={state.rbx:016x} rcx={state.rcx:016x}
-rdx={state.rdx:016x} rsi={state.rsi:016x} rdi={state.rdi:016x}
-rip={state.rip:016x} rsp={state.rsp:016x} rbp={state.rbp:016x}
- r8={ state.r8:016x}  r9={ state.r9:016x} r10={state.r10:016x}
-r11={state.r11:016x} r12={state.r12:016x} r13={state.r13:016x}
-r14={state.r14:016x} r15={state.r15:016x} efl={state.rflags:016x}
-cs={int(state.cs):04x}  ss={int(state.ss):04x}  ds={int(state.ds):04x}  es={int(state.es):04x}  fs={int(state.fs):04x}  gs={int(state.gs):04x}
-"""
-    )
-
-    if type < 1:
-        return
-
-    # KM
-    print(
-        f"""
-cr0={state.cr0:016x}  cr2={state.cr2:016x}  cr3={state.cr3:016x}  cr4={state.cr4:016x}
-dr0={state.dr0:016x}  dr1={state.dr1:016x}  dr2={state.dr2:016x}  dr3={state.dr3:016x}
-dr6={state.dr6:016x}  dr7={state.dr7:016x}  efer={state.efer:016x}
-"""
-    )
 
 
 def missing_page_cb(gpa):
@@ -229,7 +204,7 @@ def emulate(code: bytes):
     sess.cpu.state = state
     dbg("loaded state for cpu#0")
     dbg("dumping start state")
-    dump_registers(state)
+    bochscpu.utils.dump_registers(state)
 
     hooks = []
     hook = bochscpu.Hook()
@@ -260,7 +235,7 @@ def emulate(code: bytes):
     dbg("reading new state")
     new_state = sess.cpu.state
     dbg("dumping final state")
-    dump_registers(new_state)
+    bochscpu.utils.dump_registers(new_state)
 
     bochscpu.memory.release_host_page(stack_hva)
     bochscpu.memory.release_host_page(shellcode_hva)

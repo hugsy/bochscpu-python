@@ -1,6 +1,5 @@
-from typing import Any, Optional, overload
+from typing import Optional
 from enum import Enum
-import bochscpu.memory
 
 class AccessType(Enum):
     Execute: AccessType
