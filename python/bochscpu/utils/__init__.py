@@ -1,7 +1,7 @@
-import bochscpu
+import bochscpu._bochscpu as _bochscpu
 
 
-def dump_registers(state: bochscpu.State, include_kernel: bool = False):
+def dump_registers(state: _bochscpu.State, include_kernel: bool = False):
     """
     Print registers for a given `State` in a WinDbg display type
     """

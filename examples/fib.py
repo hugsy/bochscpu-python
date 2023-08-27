@@ -57,7 +57,7 @@ def missing_page_cb(gpa):
 
 
 def exception_cb(
-    sess: bochscpu.session,
+    sess: bochscpu.Session,
     cpu_id: int,
     vector: bochscpu.cpu.ExceptionType,
     error_code: bochscpu.InstructionType,
@@ -69,7 +69,7 @@ def exception_cb(
 
 
 def lin_access_cb(
-    sess: bochscpu.session,
+    sess: bochscpu.Session,
     cpu_id: int,
     lin: int,
     phy: int,
@@ -82,7 +82,7 @@ def lin_access_cb(
     stats.mem_access[access] += 1
 
 
-def after_execution_cb(sess: bochscpu.session, cpu_id: int, insn: int):
+def after_execution_cb(sess: bochscpu.Session, cpu_id: int, insn: int):
     global stats
     stats.insn_nb += 1
 
@@ -94,34 +94,9 @@ def emulate(code: bytes):
     #
     # Setup the PF handler very early to let Python handle it, rather than rust panicking
     #
-    sess = bochscpu.session()
+    sess = bochscpu.Session()
     dbg("registering our own missing page handler")
     sess.missing_page_handler = missing_page_cb
-
-    #
-    # Setup control registers to enable PG/PE and long mode
-    #
-    # AMD Vol 2 - 14.8 Long-Mode Initialization Example
-    #
-    cr0 = bochscpu.cpu.ControlRegister()
-    cr0.PG = True
-    cr0.AM = True
-    cr0.WP = True
-    cr0.NE = True
-    cr0.ET = True
-    cr0.PE = True
-
-    cr4 = bochscpu.cpu.ControlRegister()
-    cr4.PAE = True  # required for long mode
-
-    rflags = bochscpu.cpu.FlagRegister()
-    rflags.IOPL = 1
-
-    efer = bochscpu.cpu.FeatureRegister()
-    efer.NXE = True
-    efer.LMA = True
-    efer.LME = True
-    efer.SCE = True
 
     #
     # Manually craft the guest virtual & physical memory layout into a pagetable
@@ -176,13 +151,22 @@ def emulate(code: bytes):
     dbg(f"created cpu#{cpu.id}")
 
     state = bochscpu.State()
+
+    #
+    # Setup control registers to enable PG/PE and long mode
+    #
+    bochscpu.cpu.set_long_mode(state)
+
+    #
+    # Initialize CR3 with PML4 base.
+    #
+    state.cr3 = pml4
+
+    #
+    # Set the other registers
+    #
     state.rsp = stack_gva + PAGE_SIZE // 2
     state.rip = shellcode_gva
-    state.cr0 = int(cr0)
-    state.cr3 = pml4
-    state.cr4 = int(cr4)
-    state.efer = int(efer)
-    state.rflags = int(rflags)
     cs = bochscpu.Segment()
     cs.present = True
     cs.selector = 0x33
@@ -206,7 +190,7 @@ def emulate(code: bytes):
     dbg("dumping start state")
     bochscpu.utils.dump_registers(state)
 
-    hooks = []
+    hooks: list[bochscpu.Hook] = []
     hook = bochscpu.Hook()
     hook.exception = exception_cb
     hook.after_execution = after_execution_cb

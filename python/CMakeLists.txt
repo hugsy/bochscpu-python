@@ -35,7 +35,6 @@ endif()
 
 install(DIRECTORY bochscpu DESTINATION .)
 install(TARGETS _bochscpu LIBRARY DESTINATION bochscpu)
-install(DIRECTORY bochscpu-stubs DESTINATION .) # Folder name must be *-stubs, see PEP 561
 
 if(MSVC)
     install(FILES $<TARGET_PDB_FILE:_bochscpu> DESTINATION . OPTIONAL)

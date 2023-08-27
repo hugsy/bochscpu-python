@@ -303,7 +303,7 @@ NB_MODULE(_bochscpu, m)
         m.def("instr_imm64", &bochscpu_instr_imm64, "p"_a);
     }
 
-    nb::class_<BochsCPU::Session>(m, "session", nb::type_slots(slots), "Class session")
+    nb::class_<BochsCPU::Session>(m, "Session", nb::type_slots(slots), "Class session")
         .def(nb::init<>())
         .def_rw("missing_page_handler", &BochsCPU::Session::missing_page_handler, "Set the missing page callback")
         .def_ro("cpu", &BochsCPU::Session::cpu, "Get the CPU associated to the session")
