@@ -9,13 +9,17 @@ class GenericControlRegister:
     # tuple(bitposition, name, descript, rw)
     FlagType = tuple[int, str, str, bool]
     bit: list[FlagType] = []
+    name: str
 
     def __int__(self) -> int:
         return int(self.value)
 
+    def __repr__(self) -> str:
+        return str(self)
+
     def __str__(self) -> str:
         flags = ",".join([x[1] for x in self.bit if getattr(self.value, x[1])])
-        return f"CR0({flags=})"
+        return f"{self.name}({flags=})"
 
     def find(self, name: str) -> FlagType:
         res = [x for x in self.bit if x[1] == name]
@@ -85,6 +89,7 @@ class CR0(GenericControlRegister):
     """
 
     def __init__(self, initial_value: int):
+        self.name = "CR0"
         self.value = bochscpu.cpu.ControlRegister()
         self.bit: list[GenericControlRegister.FlagType] = [
             (31, "PG", "Paging ", True),
@@ -114,6 +119,7 @@ class CR4(GenericControlRegister):
     """
 
     def __init__(self, initial_value: int):
+        self.name = "CR4"
         self.value = bochscpu.cpu.ControlRegister()
         self.bit: list[GenericControlRegister.FlagType] = [
             (18, "OSXSAVE", "XSAVE and Processor Extended States Enable Bit ", True),
@@ -150,6 +156,7 @@ class EFER(GenericControlRegister):
     """
 
     def __init__(self, initial_value: int):
+        self.name = "EFER"
         self.value = bochscpu.cpu.FeatureRegister()
         self.bit: list[GenericControlRegister.FlagType] = [
             (15, "TCE", "Translation Cache Extension", True),
@@ -176,6 +183,7 @@ class RFLAGS(GenericControlRegister):
     """
 
     def __init__(self, initial_value: int):
+        self.name = "RFLAGS"
         self.value = bochscpu.cpu.FlagRegister()
         self.bit: list[GenericControlRegister.FlagType] = [
             (21, "ID", "ID Flag", True),
@@ -185,7 +193,8 @@ class RFLAGS(GenericControlRegister):
             (17, "VM", "Virtual-8086 Mode", True),
             (16, "RF", "Resume Flag", True),
             (14, "NT", "Nested Task", True),
-            (13, "12", "IOPL I/O Privilege Level", True),
+            (13, "IOPL1", "IOPL I/O Privilege Level - High", True),
+            (12, "IOPL0", "IOPL I/O Privilege Level - Low", True),
             (11, "OF", "Overflow Flag", True),
             (10, "DF", "Direction Flag", True),
             (9, "IF", "Interrupt Flag", True),
@@ -194,7 +203,53 @@ class RFLAGS(GenericControlRegister):
             (6, "ZF", "Zero Flag", True),
             (4, "AF", "Auxiliary Flag", True),
             (2, "PF", "Parity Flag", True),
+            (1, "Reserved1", "Reserved, Read as One", True),
             (0, "CF", "Carry Flag", True),
         ]
+        if initial_value:
+            self |= initial_value
+
+
+class XCR0(GenericControlRegister):
+    """Manipulate XCR0
+
+    Ref:
+        AMD Vol2 11.5.2
+
+    Args:
+        GenericControlRegister (_type_): _description_
+    """
+
+    def __init__(self, initial_value: int):
+        self.name = "XCR0"
+        self.value = bochscpu.cpu.ControlRegister()
+        self.bit: list[GenericControlRegister.FlagType] = [
+            (63, "X", "Reserved specifically for XCR0 bit vector expansion.", False),
+            (
+                62,
+                "LWP",
+                "When set, Lightweight Profiling (LWP) extensions are enabled and XSAVE/XRSTOR supports LWP state management.",
+                True,
+            ),
+            (
+                2,
+                "YMM",
+                "When set, 256-bit SSE state management is supported by XSAVE/XRSTOR. Must be set to enable AVX extensions",
+                True,
+            ),
+            (
+                1,
+                "SSE",
+                "When set, 128-bit SSE state management is supported by XSAVE/XRSTOR. This bit must be set if YMM is set. Must be set to enable AVX extensions.",
+                True,
+            ),
+            (
+                0,
+                "x87",
+                "x87 FPU state management is supported by XSAVE/XRSTOR. Must be set to 1.",
+                True,
+            ),
+        ]
+        self.value.x87 = True
         if initial_value:
             self |= initial_value

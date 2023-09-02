@@ -52,6 +52,29 @@ bochscpu_cpu_module(nb::module_& base_module)
         .value("TSD", BochsCPU::Cpu::ControlRegisterFlag::TSD, "Time Stamp Disable R/W")
         .value("PVI", BochsCPU::Cpu::ControlRegisterFlag::PVI, "Protected-Mode Virtual Interrupts R/W")
         .value("VME", BochsCPU::Cpu::ControlRegisterFlag::VME, "Virtual-8086 Mode Extensions R/W")
+
+        // xcr0
+        .value("X", BochsCPU::Cpu::ControlRegisterFlag::X, "Reserved specifically for XCR0 bit vector expansion. ")
+        .value(
+            "LWP",
+            BochsCPU::Cpu::ControlRegisterFlag::LWP,
+            "When set, Lightweight Profiling (LWP) extensions are enabled and XSAVE/XRSTOR supports LWP state "
+            "management.")
+        .value(
+            "YMM",
+            BochsCPU::Cpu::ControlRegisterFlag::YMM,
+            "When set, 256-bit SSE state management is supported by XSAVE/XRSTOR. Must be set to enable AVX "
+            "extensions.")
+        .value(
+            "SSE",
+            BochsCPU::Cpu::ControlRegisterFlag::SSE,
+            "When set, 128-bit SSE state management is supported by XSAVE/XRSTOR. This bit must be set if YMM is set. "
+            "Must be set to enable AVX extensions.")
+        .value(
+            "x87",
+            BochsCPU::Cpu::ControlRegisterFlag::x87,
+            "x87 FPU state management is supported by XSAVE/XRSTOR. Must be set to 1.")
+
         .export_values();
 
     nb::class_<BochsCPU::Cpu::ControlRegister>(m, "ControlRegister")
@@ -296,6 +319,56 @@ bochscpu_cpu_module(nb::module_& base_module)
             [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
             {
                 cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::VME, onoff);
+            })
+        .def_prop_rw(
+            "X",
+            [](BochsCPU::Cpu::ControlRegister& cr)
+            {
+                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::X);
+            },
+            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
+            {
+                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::X, onoff);
+            })
+        .def_prop_rw(
+            "LWP",
+            [](BochsCPU::Cpu::ControlRegister& cr)
+            {
+                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::LWP);
+            },
+            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
+            {
+                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::LWP, onoff);
+            })
+        .def_prop_rw(
+            "YMM",
+            [](BochsCPU::Cpu::ControlRegister& cr)
+            {
+                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::YMM);
+            },
+            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
+            {
+                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::YMM, onoff);
+            })
+        .def_prop_rw(
+            "SSE",
+            [](BochsCPU::Cpu::ControlRegister& cr)
+            {
+                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::SSE);
+            },
+            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
+            {
+                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::SSE, onoff);
+            })
+        .def_prop_rw(
+            "x87",
+            [](BochsCPU::Cpu::ControlRegister& cr)
+            {
+                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::x87);
+            },
+            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
+            {
+                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::x87, true); // Always be One
             })
         .def(
             "__repr__",

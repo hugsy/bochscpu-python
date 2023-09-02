@@ -234,7 +234,7 @@ namespace Cpu
 
 enum class ControlRegisterFlag : uint64_t
 {
-    /// CR0 - - AMD Manual Vol2 - 3.1.1
+    /// CR0 - AMD Manual Vol2 - 3.1.1
     PG = 31, // Paging R/W
     CD = 30, // Cache Disable R/W
     NW = 29, // Not Writethrough R/W
@@ -248,7 +248,7 @@ enum class ControlRegisterFlag : uint64_t
     PE = 0,  // Protection Enabled R/W
 
 
-    /// CR4 - - AMD Manual Vol2 - 3.7.1
+    /// CR4 - AMD Manual Vol2 - 3.7.1
     OSXSAVE    = 18, // XSAVE and Processor Extended States Enable Bit R/W
     FSGSBASE   = 16, // Enable RDFSBASE, RDGSBASE, WRFSBASE, and WRGSBASE instructions R/W
     OSXMMEXCPT = 10, // Operating System Unmasked Exception Support R/W
@@ -262,6 +262,17 @@ enum class ControlRegisterFlag : uint64_t
     TSD        = 2,  // Time Stamp Disable R/W
     PVI        = 1,  // Protected-Mode Virtual Interrupts R/W
     VME        = 0,  // Virtual-8086 Mode Extensions R/W
+
+
+    /// XCR0 - AMD Manual Vol2 - 3.7.1
+    X   = 63, // Reserved specifically for XCR0 bit vector expansion.
+    LWP = 62, // When set, Lightweight Profiling (LWP) extensions are enabled and XSAVE/XRSTOR supports LWP state
+              // management.
+    YMM = 2,  // When set, 256-bit SSE state management is supported by XSAVE/XRSTOR. Must be set to enable AVX
+              // extensions
+    SSE = 1, // When set, 128-bit SSE state management is supported by XSAVE/XRSTOR. This bit must be set if YMM is set.
+             // Must be set to enable AVX extensions.
+    x87 = 0, // x87 FPU state management is supported by XSAVE/XRSTOR. Must be set to 1.
 };
 
 enum class FlagRegisterFlag : uint64_t

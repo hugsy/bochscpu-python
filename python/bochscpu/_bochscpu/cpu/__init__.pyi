@@ -298,6 +298,46 @@ class ControlRegister:
         Get/Set WP control register flag: CR0 Write Protect R/W
         """
         ...
+    @X.setter
+    def X(self) -> bool:
+        """Set the CR4 flag X"""
+        ...
+    @property
+    def X(self) -> bool:
+        """Get X CR4 Flag"""
+        ...
+    @LWP.setter
+    def LWP(self) -> bool:
+        """Set the CR4 flag LWP"""
+        ...
+    @property
+    def LWP(self) -> bool:
+        """Get LWP CR4 Flag"""
+        ...
+    @YMM.setter
+    def YMM(self) -> bool:
+        """Set the CR4 flag YMM"""
+        ...
+    @property
+    def YMM(self) -> bool:
+        """Get YMM CR4 Flag"""
+        ...
+    @SSE.setter
+    def SSE(self) -> bool:
+        """Set the CR4 flag SSE"""
+        ...
+    @property
+    def SSE(self) -> bool:
+        """Get SSE CR4 Flag"""
+        ...
+    @x87.setter
+    def x87(self) -> bool:
+        """Set the CR4 flag x87"""
+        ...
+    @property
+    def x87(self) -> bool:
+        """Get x87 CR4 Flag"""
+        ...
     def __init__(self) -> None: ...
     def __int__(self) -> int: ...
 
