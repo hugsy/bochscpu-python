@@ -247,9 +247,8 @@ class XCR0(GenericControlRegister):
                 0,
                 "x87",
                 "x87 FPU state management is supported by XSAVE/XRSTOR. Must be set to 1.",
-                True,
+                False,
             ),
         ]
-        self.value.x87 = True
         if initial_value:
             self |= initial_value
