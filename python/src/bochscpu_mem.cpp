@@ -70,33 +70,33 @@ bochscpu_memory_module(nb::module_& base_module)
         "Read from GPA");
     m.def(
         "phy_write",
-        [](uint64_t gpa, std::vector<uint8_t> const& hva)
+        [](uint64_t gpa, std::vector<uint8_t> const& bytes)
         {
-            ::bochscpu_mem_phy_write(gpa, hva.data(), hva.size());
+            ::bochscpu_mem_phy_write(gpa, bytes.data(), bytes.size());
         },
         "gpa"_a,
         "hva"_a,
         "Write to GPA");
     m.def(
         "virt_write",
-        [](uint64_t cr3, uint64_t gva, std::vector<uint8_t> const& hva)
+        [](uint64_t cr3, uint64_t gva, std::vector<uint8_t> const& bytes)
         {
-            return ::bochscpu_mem_virt_write(cr3, gva, hva.data(), hva.size()) == 0;
+            return ::bochscpu_mem_virt_write(cr3, gva, bytes.data(), bytes.size()) == 0;
         },
         "cr3"_a,
         "gva"_a,
-        "hva"_a,
+        "bytes"_a,
         "Write to GVA");
     m.def(
         "virt_read",
         [](uint64_t cr3, uint64_t gva, const uint64_t sz) -> std::vector<uint8_t>
         {
-            std::vector<uint8_t> hva(sz);
-            if ( ::bochscpu_mem_virt_read(cr3, gva, hva.data(), hva.size()) )
+            std::vector<uint8_t> bytes(sz);
+            if ( ::bochscpu_mem_virt_read(cr3, gva, bytes.data(), bytes.size()) )
             {
                 throw std::runtime_error("invalid access");
             }
-            return hva;
+            return bytes;
         },
         "cr3"_a,
         "gva"_a,

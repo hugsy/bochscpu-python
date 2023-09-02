@@ -95,21 +95,23 @@ def emulate(code: bytes):
     # Setup the PF handler very early to let Python handle it, rather than rust panicking
     #
     sess = bochscpu.Session()
-    dbg("registering our own missing page handler")
+    dbg(f"created session for cpu#{sess.cpu.id}")
+
     sess.missing_page_handler = missing_page_cb
+    dbg("registered our own missing page handler")
 
     #
     # Manually craft the guest virtual & physical memory layout into a pagetable
     # Once done bind the resulting GPAs it to bochs
     #
     shellcode_hva = bochscpu.memory.allocate_host_page()
-    shellcode_gva = 0x0400_0000
-    shellcode_gpa = 0x1400_0000
+    shellcode_gva = 0x0000_0041_0000_0000
+    shellcode_gpa = 0x0000_0000_1400_0000
     dbg(f"inserting {shellcode_gva=:#x} -> {shellcode_gpa=:#x} ->  {shellcode_hva=:#x}")
     bochscpu.memory.page_insert(shellcode_gpa, shellcode_hva)
 
     stack_hva = bochscpu.memory.allocate_host_page()
-    stack_gva = 0x0401_0000
+    stack_gva = 0x0401_0000_0000
     stack_gpa = 0x1401_0000
     dbg(f"inserting {stack_gva=:#x} -> {stack_gpa=:#x} -> {stack_hva=:#x}")
     bochscpu.memory.page_insert(stack_gpa, stack_hva)
@@ -147,9 +149,6 @@ def emulate(code: bytes):
     #
     # Create a state and load it into a new CPU
     #
-    cpu = sess.cpu
-    dbg(f"created cpu#{cpu.id}")
-
     state = bochscpu.State()
 
     #
@@ -167,6 +166,10 @@ def emulate(code: bytes):
     #
     state.rsp = stack_gva + PAGE_SIZE // 2
     state.rip = shellcode_gva
+
+    #
+    # Set the selectors
+    #
     cs = bochscpu.Segment()
     cs.present = True
     cs.selector = 0x33
@@ -185,22 +188,28 @@ def emulate(code: bytes):
     state.es = ds
     state.fs = ds
     state.gs = ds
+
+    #
+    # Assign the state
+    #
     sess.cpu.state = state
     dbg("loaded state for cpu#0")
     dbg("dumping start state")
-    bochscpu.utils.dump_registers(state)
+    bochscpu.utils.dump_registers(sess.cpu.state)
 
-    hooks: list[bochscpu.Hook] = []
     hook = bochscpu.Hook()
     hook.exception = exception_cb
     hook.after_execution = after_execution_cb
     hook.lin_access = lin_access_cb
-    hooks.append(hook)
-    dbg("hooks ok")
+    dbg("hook setup ok")
 
     dbg("starting the vm...")
     t1 = time.time_ns()
-    sess.run(hooks)
+    sess.run(
+        [
+            hook,
+        ]
+    )
     t2 = time.time_ns()
     dbg(
         f"vm stopped, execution: {stats.insn_nb} insns in {t2-t1}ns (~{int(stats.insn_nb // ((t2-t1)/1_000_000_000))}) insn/s"

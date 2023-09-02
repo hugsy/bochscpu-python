@@ -76,7 +76,7 @@ def phy_translate(gpa: int) -> int:
     """
     ...
 
-def phy_write(gpa: int, hva: bytes) -> None:
+def phy_write(gpa: int, bytes: bytes) -> None:
     """
     Write to GPA
     """
@@ -94,7 +94,7 @@ def virt_translate(cr3: int, gva: int) -> int:
     """
     ...
 
-def virt_write(cr3: int, gva: int, hva: bytes) -> bool:
+def virt_write(cr3: int, gva: int, bytes: bytes) -> bool:
     """
     Write to GVA
     """

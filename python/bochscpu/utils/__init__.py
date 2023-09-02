@@ -1,9 +1,17 @@
+import struct
+
+import bochscpu.memory
 import bochscpu._bochscpu as _bochscpu
+
+PAGE_SIZE = bochscpu.memory.page_size()
 
 
 def dump_registers(state: _bochscpu.State, include_kernel: bool = False):
-    """
-    Print registers for a given `State` in a WinDbg display type
+    """Print registers for a given `State` in a WinDbg display type
+
+    Args:
+        state (_bochscpu.State): _description_
+        include_kernel (bool): _description_
     """
     print(
         f"""
@@ -28,3 +36,34 @@ dr6={state.dr6:016x}  dr7={state.dr7:016x}  efer={state.efer:016x}
 """
     )
     return
+
+
+def dump_page_table(pml4: int):
+    """Dump a Page Table from its PML4
+
+    Args:
+        pml4 (int): _description_
+    """
+
+    def __dump_page_table(addr: int, level: int = 0):
+        level_str = ("PML", "PDPT", "PD", "PT")
+        if level == 4:
+            data = bytes(bochscpu.memory.phy_read(addr, 8))
+            entry = struct.unpack("<Q", data[:8])[0] & ~0xFFF
+            print(f"{' '*level} {entry:#x}")
+            return
+
+        print(f"Dumping {level_str[level]}Es @ {addr:#x}")
+
+        for i in range(0, PAGE_SIZE, 8):
+            data = bytes(bochscpu.memory.phy_read(addr + i, 8))
+            entry = struct.unpack("<Q", data[:8])[0]
+            flags = entry & 0xFFF
+            entry = entry & ~0xFFF
+            if entry == 0:
+                continue
+            print(f"{' '*level} #{i//8} - {hex(entry)}|{flags=:#x}")
+            __dump_page_table(entry, level + 1)
+        return
+
+    __dump_page_table(pml4, 0)

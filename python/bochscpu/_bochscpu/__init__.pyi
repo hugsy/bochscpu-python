@@ -891,7 +891,7 @@ class Session:
 
     def __init__(self) -> None: ...
     @property
-    def cpu(self) -> bochscpu._bochscpu.cpu.cpu:
+    def cpu(self) -> bochscpu._bochscpu.cpu.Cpu:
         """
         Get the CPU associated to the session
         """

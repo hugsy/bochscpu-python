@@ -36,3 +36,38 @@ def set_long_mode(state: State):
     state.cr4 = int(cr4)
     state.efer = int(efer)
     return
+
+
+def set_real_mode(state: State):
+    cr0 = ControlRegister()
+    cr0.PE = False  # Enable protected mode
+
+    cr4 = ControlRegister()
+    cr4.PAE = False
+
+    efer = FeatureRegister()
+    efer.LME = False
+
+    state.cr0 = int(cr0)
+    state.cr4 = int(cr4)
+    state.efer = int(efer)
+    return
+
+
+# TODO virtual 8086, 32b compat
+
+
+def set_protected_mode(state: State):
+    cr0 = ControlRegister()
+    cr0.PE = True  # Enable protected mode
+
+    cr4 = ControlRegister()
+    cr4.PAE = False
+
+    efer = FeatureRegister()
+    efer.LME = False
+
+    state.cr0 = int(cr0)
+    state.cr4 = int(cr4)
+    state.efer = int(efer)
+    return

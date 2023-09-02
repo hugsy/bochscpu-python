@@ -16,15 +16,22 @@
 #error Not supported
 #endif // _WIN32
 
+#include <nanobind/stl/shared_ptr.h>
+
 #include "bochscpu/bochscpu.hpp"
 
 // #define DEBUG
 
 #ifdef DEBUG
-#define GEN_FMT "[%s::%d] "
-#define dbg(fmt, ...) ::printf(GEN_FMT fmt "\n", __FUNCTION__, __LINE__, __VA_ARGS__)
+#define dbg(fmt, ...) ::printf("[*] %s:%d - " fmt "\n", __FUNCTION__, __LINE__, __VA_ARGS__)
+#define info(fmt, ...) ::printf("[+] %s:%d - " fmt "\n", __FUNCTION__, __LINE__, __VA_ARGS__)
+#define warn(fmt, ...) ::printf("[!] %s:%d - " fmt "\n", __FUNCTION__, __LINE__, __VA_ARGS__)
+#define err(fmt, ...) ::printf("[-] %s:%d - " fmt "\n", __FUNCTION__, __LINE__, __VA_ARGS__)
 #else
 #define dbg(fmt, ...)
+#define info(fmt, ...) ::printf("[+] " fmt "\n", __VA_ARGS__)
+#define warn(fmt, ...) ::printf("[!] " fmt "\n", __VA_ARGS__)
+#define err(fmt, ...) ::printf("[-] " fmt "\n", __VA_ARGS__)
 #endif // DEBUG
 
 //
@@ -56,7 +63,7 @@
 namespace BochsCPU
 {
 ///
-/// @brief Src https://github.com/lubomyr/bochs/blob/8e0b9abcd81cd24d4d9c68f7fdef2f53bc180d33/cpu/cpu.h#L306
+/// @brief Src https://github.com/bochs-emu/Bochs/blob/86eff7597d72af912d708a10c0a2000d0b9973c2/bochs/cpu/cpu.h#L312
 ///
 ///
 enum class BochsException : uint32_t
@@ -314,26 +321,26 @@ struct FeatureRegister : std::bitset<64>
 };
 
 
-static uint32_t g_sessionId {0};
+static uint32_t g_sessionId = 0;
 
 struct CPU
 {
     CPU()
     {
-        this->id  = g_sessionId++;
-        this->cpu = ::bochscpu_cpu_new(this->id);
-        if ( !this->cpu )
+        this->id    = g_sessionId++;
+        this->__cpu = ::bochscpu_cpu_new(this->id);
+        if ( !this->__cpu )
             throw std::runtime_error("Invalid CPU ID");
         dbg("Created CPU#%lu", this->id);
     }
 
     ~CPU()
     {
-        ::bochscpu_cpu_delete(this->cpu);
+        ::bochscpu_cpu_delete(this->__cpu);
     }
 
     uint32_t id {0};
-    bochscpu_cpu_t cpu {};
+    bochscpu_cpu_t __cpu {};
 };
 } // namespace Cpu
 
@@ -510,8 +517,15 @@ static inline std::unique_ptr<std::function<void(uint64_t)>> missing_page_handle
 static void
 missing_page_cb(uint64_t gpa)
 {
-    dbg("missing gpa=%#llx", gpa);
-    (*missing_page_handler)(gpa);
+    if ( BochsCPU::Memory::missing_page_handler )
+    {
+        dbg("Missing GPA=%#llx", gpa);
+        (*missing_page_handler)(gpa);
+    }
+    else
+    {
+        err("Missing GPA=%#llx - no handler defined", gpa);
+    }
 }
 } // namespace Memory
 
