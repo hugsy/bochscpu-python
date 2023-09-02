@@ -3,6 +3,8 @@ import struct
 import bochscpu.memory
 import bochscpu._bochscpu as _bochscpu
 
+from . import cpu
+
 PAGE_SIZE = bochscpu.memory.page_size()
 
 
