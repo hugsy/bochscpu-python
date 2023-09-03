@@ -16,8 +16,6 @@
 #error Not supported
 #endif // _WIN32
 
-#include <nanobind/stl/shared_ptr.h>
-
 #include "bochscpu/bochscpu.hpp"
 
 // #define DEBUG
