@@ -29,9 +29,15 @@
 #define err(fmt, ...) ::printf("[-] %s:%d - " fmt "\n", __FUNCTION__, __LINE__, __VA_ARGS__)
 #else
 #define dbg(fmt, ...)
+#if defined(_WIN32)
 #define info(fmt, ...) ::printf("[+] " fmt "\n", __VA_ARGS__)
 #define warn(fmt, ...) ::printf("[!] " fmt "\n", __VA_ARGS__)
 #define err(fmt, ...) ::printf("[-] " fmt "\n", __VA_ARGS__)
+#elif defined(linux) || defined(__linux)
+#define info(fmt, ...) ::printf("[+] " fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
+#define warn(fmt, ...) ::printf("[!] " fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
+#define err(fmt, ...) ::printf("[-] " fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
+#endif
 #endif // DEBUG
 
 //
