@@ -1,4 +1,5 @@
 #include <nanobind/nanobind.h>
+#include <nanobind/operators.h>
 
 #include "bochscpu.hpp"
 
@@ -51,6 +52,29 @@ bochscpu_cpu_module(nb::module_& base_module)
         .value("TSD", BochsCPU::Cpu::ControlRegisterFlag::TSD, "Time Stamp Disable R/W")
         .value("PVI", BochsCPU::Cpu::ControlRegisterFlag::PVI, "Protected-Mode Virtual Interrupts R/W")
         .value("VME", BochsCPU::Cpu::ControlRegisterFlag::VME, "Virtual-8086 Mode Extensions R/W")
+
+        // xcr0
+        .value("X", BochsCPU::Cpu::ControlRegisterFlag::X, "Reserved specifically for XCR0 bit vector expansion. ")
+        .value(
+            "LWP",
+            BochsCPU::Cpu::ControlRegisterFlag::LWP,
+            "When set, Lightweight Profiling (LWP) extensions are enabled and XSAVE/XRSTOR supports LWP state "
+            "management.")
+        .value(
+            "YMM",
+            BochsCPU::Cpu::ControlRegisterFlag::YMM,
+            "When set, 256-bit SSE state management is supported by XSAVE/XRSTOR. Must be set to enable AVX "
+            "extensions.")
+        .value(
+            "SSE",
+            BochsCPU::Cpu::ControlRegisterFlag::SSE,
+            "When set, 128-bit SSE state management is supported by XSAVE/XRSTOR. This bit must be set if YMM is set. "
+            "Must be set to enable AVX extensions.")
+        .value(
+            "x87",
+            BochsCPU::Cpu::ControlRegisterFlag::x87,
+            "x87 FPU state management is supported by XSAVE/XRSTOR. Must be set to 1.")
+
         .export_values();
 
     nb::class_<BochsCPU::Cpu::ControlRegister>(m, "ControlRegister")
@@ -295,6 +319,56 @@ bochscpu_cpu_module(nb::module_& base_module)
             [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
             {
                 cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::VME, onoff);
+            })
+        .def_prop_rw(
+            "X",
+            [](BochsCPU::Cpu::ControlRegister& cr)
+            {
+                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::X);
+            },
+            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
+            {
+                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::X, onoff);
+            })
+        .def_prop_rw(
+            "LWP",
+            [](BochsCPU::Cpu::ControlRegister& cr)
+            {
+                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::LWP);
+            },
+            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
+            {
+                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::LWP, onoff);
+            })
+        .def_prop_rw(
+            "YMM",
+            [](BochsCPU::Cpu::ControlRegister& cr)
+            {
+                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::YMM);
+            },
+            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
+            {
+                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::YMM, onoff);
+            })
+        .def_prop_rw(
+            "SSE",
+            [](BochsCPU::Cpu::ControlRegister& cr)
+            {
+                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::SSE);
+            },
+            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
+            {
+                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::SSE, onoff);
+            })
+        .def_prop_rw(
+            "x87",
+            [](BochsCPU::Cpu::ControlRegister& cr)
+            {
+                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::x87);
+            },
+            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
+            {
+                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::x87, true); // Always be One
             })
         .def(
             "__repr__",
@@ -699,7 +773,7 @@ bochscpu_cpu_module(nb::module_& base_module)
         .value("ControlProtection", BochsCPU::BochsException::BX_CP_EXCEPTION)
         .export_values();
 
-    nb::class_<BochsCPU::Cpu::CPU>(m, "cpu")
+    nb::class_<BochsCPU::Cpu::CPU>(m, "Cpu")
         .def_ro("id", &BochsCPU::Cpu::CPU::id)
 
         // .def("cpu_new", &bochscpu_cpu_new, "id"_a, "Create a new CPU")
@@ -711,215 +785,221 @@ bochscpu_cpu_module(nb::module_& base_module)
             "set_mode",
             [](BochsCPU::Cpu::CPU& c)
             {
-                ::bochscpu_cpu_set_mode(&c);
+                ::bochscpu_cpu_set_mode(c.__cpu);
             })
         .def_prop_rw(
             "state",
             [](BochsCPU::Cpu::CPU& c)
             {
-                State s;
-                ::bochscpu_cpu_state(&c, &s);
+                State s {};
+                ::bochscpu_cpu_state(c.__cpu, &s);
                 return s;
             },
             [](BochsCPU::Cpu::CPU& c, State& s)
             {
-                ::bochscpu_cpu_set_state(&c, &s);
+                ::bochscpu_cpu_set_state(c.__cpu, &s);
             })
         .def(
             "set_state_no_flush",
             [](BochsCPU::Cpu::CPU& c, State& s)
             {
-                ::bochscpu_cpu_set_state_no_flush(&c, &s);
+                ::bochscpu_cpu_set_state_no_flush(c.__cpu, &s);
+            },
+            "state"_a)
+        .def(
+            "set_state",
+            [](BochsCPU::Cpu::CPU& c, State& s)
+            {
+                ::bochscpu_cpu_set_state(c.__cpu, &s);
             },
             "state"_a)
         .def(
             "set_exception",
             [](BochsCPU::Cpu::CPU& c, uint32_t vector, uint32_t error)
             {
-                ::bochscpu_cpu_set_exception(&c, vector, error);
+                ::bochscpu_cpu_set_exception(c.__cpu, vector, error);
             },
             "vector"_a,
             "error"_a)
-
         .def_prop_rw(
             "rax",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_rax(&c);
+                return ::bochscpu_cpu_rax(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_rax(&c, v);
+                ::bochscpu_cpu_set_rax(c.__cpu, v);
             })
         .def_prop_rw(
             "rcx",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_rcx(&c);
+                return ::bochscpu_cpu_rcx(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_rcx(&c, v);
+                ::bochscpu_cpu_set_rcx(c.__cpu, v);
             })
         .def_prop_rw(
             "rdx",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_rdx(&c);
+                return ::bochscpu_cpu_rdx(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_rdx(&c, v);
+                ::bochscpu_cpu_set_rdx(c.__cpu, v);
             })
         .def_prop_rw(
             "rbx",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_rbx(&c);
+                return ::bochscpu_cpu_rbx(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_rbx(&c, v);
+                ::bochscpu_cpu_set_rbx(c.__cpu, v);
             })
         .def_prop_rw(
             "rsp",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_rsp(&c);
+                return ::bochscpu_cpu_rsp(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_rsp(&c, v);
+                ::bochscpu_cpu_set_rsp(c.__cpu, v);
             })
         .def_prop_rw(
             "rbp",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_rbp(&c);
+                return ::bochscpu_cpu_rbp(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_rbp(&c, v);
+                ::bochscpu_cpu_set_rbp(c.__cpu, v);
             })
         .def_prop_rw(
             "rsi",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_rsi(&c);
+                return ::bochscpu_cpu_rsi(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_rsi(&c, v);
+                ::bochscpu_cpu_set_rsi(c.__cpu, v);
             })
         .def_prop_rw(
             "rdi",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_rdi(&c);
+                return ::bochscpu_cpu_rdi(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_rdi(&c, v);
+                ::bochscpu_cpu_set_rdi(c.__cpu, v);
             })
         .def_prop_rw(
             "r8",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_r8(&c);
+                return ::bochscpu_cpu_r8(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_r8(&c, v);
+                ::bochscpu_cpu_set_r8(c.__cpu, v);
             })
         .def_prop_rw(
             "r9",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_r9(&c);
+                return ::bochscpu_cpu_r9(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_r9(&c, v);
+                ::bochscpu_cpu_set_r9(c.__cpu, v);
             })
         .def_prop_rw(
             "r10",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_r10(&c);
+                return ::bochscpu_cpu_r10(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_r10(&c, v);
+                ::bochscpu_cpu_set_r10(c.__cpu, v);
             })
         .def_prop_rw(
             "r11",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_r11(&c);
+                return ::bochscpu_cpu_r11(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_r11(&c, v);
+                ::bochscpu_cpu_set_r11(c.__cpu, v);
             })
         .def_prop_rw(
             "r12",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_r12(&c);
+                return ::bochscpu_cpu_r12(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_r12(&c, v);
+                ::bochscpu_cpu_set_r12(c.__cpu, v);
             })
         .def_prop_rw(
             "r13",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_r13(&c);
+                return ::bochscpu_cpu_r13(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_r13(&c, v);
+                ::bochscpu_cpu_set_r13(c.__cpu, v);
             })
         .def_prop_rw(
             "r14",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_r14(&c);
+                return ::bochscpu_cpu_r14(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_r14(&c, v);
+                ::bochscpu_cpu_set_r14(c.__cpu, v);
             })
         .def_prop_rw(
             "r15",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_r15(&c);
+                return ::bochscpu_cpu_r15(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_r15(&c, v);
+                ::bochscpu_cpu_set_r15(c.__cpu, v);
             })
         .def_prop_rw(
             "rip",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_rip(&c);
+                return ::bochscpu_cpu_rip(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_rip(&c, v);
+                ::bochscpu_cpu_set_rip(c.__cpu, v);
             })
         .def_prop_rw(
             "rflags",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_rflags(&c);
+                return ::bochscpu_cpu_rflags(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_rflags(&c, v);
+                ::bochscpu_cpu_set_rflags(c.__cpu, v);
             })
 
         .def_prop_rw(
@@ -927,151 +1007,151 @@ bochscpu_cpu_module(nb::module_& base_module)
             [](BochsCPU::Cpu::CPU& c)
             {
                 Seg s {};
-                ::bochscpu_cpu_cs(&c, &s);
+                ::bochscpu_cpu_cs(c.__cpu, &s);
                 return s;
             },
             [](BochsCPU::Cpu::CPU& c, Seg& s)
             {
-                ::bochscpu_cpu_set_cs(&c, &s);
+                ::bochscpu_cpu_set_cs(c.__cpu, &s);
             })
         .def_prop_rw(
             "ds",
             [](BochsCPU::Cpu::CPU& c)
             {
                 Seg s {};
-                ::bochscpu_cpu_ds(&c, &s);
+                ::bochscpu_cpu_ds(c.__cpu, &s);
                 return s;
             },
             [](BochsCPU::Cpu::CPU& c, Seg& s)
             {
-                ::bochscpu_cpu_set_ds(&c, &s);
+                ::bochscpu_cpu_set_ds(c.__cpu, &s);
             })
         .def_prop_rw(
             "es",
             [](BochsCPU::Cpu::CPU& c)
             {
                 Seg s {};
-                ::bochscpu_cpu_es(&c, &s);
+                ::bochscpu_cpu_es(c.__cpu, &s);
                 return s;
             },
             [](BochsCPU::Cpu::CPU& c, Seg& s)
             {
-                ::bochscpu_cpu_set_es(&c, &s);
+                ::bochscpu_cpu_set_es(c.__cpu, &s);
             })
         .def_prop_rw(
             "fs",
             [](BochsCPU::Cpu::CPU& c)
             {
                 Seg s {};
-                ::bochscpu_cpu_fs(&c, &s);
+                ::bochscpu_cpu_fs(c.__cpu, &s);
                 return s;
             },
             [](BochsCPU::Cpu::CPU& c, Seg& s)
             {
-                ::bochscpu_cpu_set_fs(&c, &s);
+                ::bochscpu_cpu_set_fs(c.__cpu, &s);
             })
         .def_prop_rw(
             "ss",
             [](BochsCPU::Cpu::CPU& c)
             {
                 Seg s {};
-                ::bochscpu_cpu_ss(&c, &s);
+                ::bochscpu_cpu_ss(c.__cpu, &s);
                 return s;
             },
             [](BochsCPU::Cpu::CPU& c, Seg& s)
             {
-                ::bochscpu_cpu_set_ss(&c, &s);
+                ::bochscpu_cpu_set_ss(c.__cpu, &s);
             })
         .def_prop_rw(
             "gs",
             [](BochsCPU::Cpu::CPU& c)
             {
                 Seg s {};
-                ::bochscpu_cpu_gs(&c, &s);
+                ::bochscpu_cpu_gs(c.__cpu, &s);
                 return s;
             },
             [](BochsCPU::Cpu::CPU& c, Seg& s)
             {
-                ::bochscpu_cpu_set_gs(&c, &s);
+                ::bochscpu_cpu_set_gs(c.__cpu, &s);
             })
         .def_prop_rw(
             "ldtr",
             [](BochsCPU::Cpu::CPU& c)
             {
                 Seg s {};
-                ::bochscpu_cpu_ldtr(&c, &s);
+                ::bochscpu_cpu_ldtr(c.__cpu, &s);
                 return s;
             },
             [](BochsCPU::Cpu::CPU& c, Seg& s)
             {
-                ::bochscpu_cpu_set_ldtr(&c, &s);
+                ::bochscpu_cpu_set_ldtr(c.__cpu, &s);
             })
         .def_prop_rw(
             "tr",
             [](BochsCPU::Cpu::CPU& c)
             {
                 Seg s {};
-                ::bochscpu_cpu_tr(&c, &s);
+                ::bochscpu_cpu_tr(c.__cpu, &s);
                 return s;
             },
             [](BochsCPU::Cpu::CPU& c, Seg& s)
             {
-                ::bochscpu_cpu_set_tr(&c, &s);
+                ::bochscpu_cpu_set_tr(c.__cpu, &s);
             })
         .def_prop_rw(
             "gdtr",
             [](BochsCPU::Cpu::CPU& c)
             {
                 GlobalSeg s {};
-                ::bochscpu_cpu_gdtr(&c, &s);
+                ::bochscpu_cpu_gdtr(c.__cpu, &s);
                 return s;
             },
             [](BochsCPU::Cpu::CPU& c, GlobalSeg& s)
             {
-                ::bochscpu_cpu_set_gdtr(&c, &s);
+                ::bochscpu_cpu_set_gdtr(c.__cpu, &s);
             })
         .def_prop_rw(
             "idtr",
             [](BochsCPU::Cpu::CPU& c)
             {
                 GlobalSeg s {};
-                ::bochscpu_cpu_idtr(&c, &s);
+                ::bochscpu_cpu_idtr(c.__cpu, &s);
                 return s;
             },
             [](BochsCPU::Cpu::CPU& c, GlobalSeg& s)
             {
-                ::bochscpu_cpu_set_idtr(&c, &s);
+                ::bochscpu_cpu_set_idtr(c.__cpu, &s);
             })
         .def_prop_rw(
             "cr2",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_cr2(&c);
+                return ::bochscpu_cpu_cr2(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_cr2(&c, v);
+                ::bochscpu_cpu_set_cr2(c.__cpu, v);
             })
         .def_prop_rw(
             "cr3",
             [](BochsCPU::Cpu::CPU& c)
             {
-                return ::bochscpu_cpu_cr3(&c);
+                return ::bochscpu_cpu_cr3(c.__cpu);
             },
             [](BochsCPU::Cpu::CPU& c, uint64_t v)
             {
-                ::bochscpu_cpu_set_cr3(&c, v);
+                ::bochscpu_cpu_set_cr3(c.__cpu, v);
             })
         .def_prop_rw(
             "zmm",
             [](BochsCPU::Cpu::CPU& c, uintptr_t idx)
             {
                 Zmm z {};
-                ::bochscpu_cpu_zmm(&c, idx, &z);
+                ::bochscpu_cpu_zmm(c.__cpu, idx, &z);
                 return z;
             },
             [](BochsCPU::Cpu::CPU& c, uintptr_t idx, Zmm& z)
             {
-                ::bochscpu_cpu_set_zmm(&c, idx, &z);
+                ::bochscpu_cpu_set_zmm(c.__cpu, idx, &z);
             });
 }

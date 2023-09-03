@@ -10,7 +10,7 @@
 namespace nb = nanobind;
 using namespace nb::literals;
 
-#define MAX_HOOKS 256
+#define MAX_HOOKS 16
 
 
 void
@@ -43,9 +43,10 @@ PyType_Slot slots[] = {
     {Py_tp_clear, (void*)bochscpu_tp_clear},
     {0, nullptr}};
 
-NB_MODULE(bochscpu, m)
+NB_MODULE(_bochscpu, m)
 {
-    m.doc() = "The `bochscpu` module";
+    m.doc()               = "The native `bochscpu` module";
+    m.attr("__version__") = "0.1.5";
 
     //
     // Submodules
@@ -198,7 +199,7 @@ NB_MODULE(bochscpu, m)
 
     nb::class_<Zmm>(m, "Zmm").def(nb::init<>()).def_rw("q", &Zmm::q);
 
-    nb::class_<State>(m, "State", nb::type_slots(slots), "Class State")
+    nb::class_<State>(m, "State", "Class State")
         .def(nb::init<>())
         .def_rw("seed", &State::bochscpu_seed, "Get/Set the seed in the current state")
         .def_rw("rax", &State::rax, "Get/Set the register `rax` in the current state")
@@ -302,7 +303,7 @@ NB_MODULE(bochscpu, m)
         m.def("instr_imm64", &bochscpu_instr_imm64, "p"_a);
     }
 
-    nb::class_<BochsCPU::Session>(m, "session", nb::type_slots(slots), "Class session")
+    nb::class_<BochsCPU::Session>(m, "Session", nb::type_slots(slots), "Class session")
         .def(nb::init<>())
         .def_rw("missing_page_handler", &BochsCPU::Session::missing_page_handler, "Set the missing page callback")
         .def_ro("cpu", &BochsCPU::Session::cpu, "Get the CPU associated to the session")
@@ -310,55 +311,66 @@ NB_MODULE(bochscpu, m)
             "run",
             [](BochsCPU::Session& s, std::vector<BochsCPU::Hook>& h)
             {
-                if ( h.size() > (MAX_HOOKS - 1) )
+                if ( h.size() > MAX_HOOKS )
                 {
                     throw std::runtime_error("Too many hooks.");
                 }
 
-                bochscpu_hooks_t hooks[MAX_HOOKS] {};
-                bochscpu_hooks_t* hooks2[MAX_HOOKS] {};
+                bochscpu_hooks_t hooks[MAX_HOOKS + 1] {};
+                bochscpu_hooks_t* hook_chain[MAX_HOOKS + 1] {};
 
                 for ( int i = 0; BochsCPU::Hook & _h : h )
                 {
-                    _h.ctx                          = (void*)&s;
-                    hooks[i].ctx                    = (void*)&_h;
-                    hooks[i].before_execution       = BochsCPU::Callbacks::before_execution_cb;
+                    //
+                    // Attach a raw session pointer to the Hook context
+                    //
+                    _h.ctx       = (void*)&s;
+                    hooks[i].ctx = (void*)&_h;
+
+                    //
+                    // Set up the callback trampolines
+                    //
                     hooks[i].after_execution        = BochsCPU::Callbacks::after_execution_cb;
-                    hooks[i].reset                  = BochsCPU::Callbacks::reset_cb;
-                    hooks[i].hlt                    = BochsCPU::Callbacks::hlt_cb;
-                    hooks[i].mwait                  = BochsCPU::Callbacks::mwait_cb;
-                    hooks[i].cnear_branch_taken     = BochsCPU::Callbacks::cnear_branch_taken_cb;
-                    hooks[i].cnear_branch_not_taken = BochsCPU::Callbacks::cnear_branch_not_taken_cb;
-                    hooks[i].ucnear_branch          = BochsCPU::Callbacks::ucnear_branch_cb;
-                    hooks[i].far_branch             = BochsCPU::Callbacks::far_branch_cb;
-                    hooks[i].vmexit                 = BochsCPU::Callbacks::vmexit_cb;
-                    hooks[i].interrupt              = BochsCPU::Callbacks::interrupt_cb;
-                    hooks[i].hw_interrupt           = BochsCPU::Callbacks::hw_interrupt_cb;
-                    hooks[i].clflush                = BochsCPU::Callbacks::clflush_cb;
-                    hooks[i].tlb_cntrl              = BochsCPU::Callbacks::tlb_cntrl_cb;
+                    hooks[i].before_execution       = BochsCPU::Callbacks::before_execution_cb;
                     hooks[i].cache_cntrl            = BochsCPU::Callbacks::cache_cntrl_cb;
-                    hooks[i].prefetch_hint          = BochsCPU::Callbacks::prefetch_hint_cb;
-                    hooks[i].wrmsr                  = BochsCPU::Callbacks::wrmsr_cb;
-                    hooks[i].repeat_iteration       = BochsCPU::Callbacks::repeat_iteration_cb;
-                    hooks[i].lin_access             = BochsCPU::Callbacks::lin_access_cb;
-                    hooks[i].phy_access             = BochsCPU::Callbacks::phy_access_cb;
+                    hooks[i].clflush                = BochsCPU::Callbacks::clflush_cb;
+                    hooks[i].cnear_branch_not_taken = BochsCPU::Callbacks::cnear_branch_not_taken_cb;
+                    hooks[i].cnear_branch_taken     = BochsCPU::Callbacks::cnear_branch_taken_cb;
+                    hooks[i].exception              = BochsCPU::Callbacks::exception_cb;
+                    hooks[i].far_branch             = BochsCPU::Callbacks::far_branch_cb;
+                    hooks[i].hlt                    = BochsCPU::Callbacks::hlt_cb;
+                    hooks[i].hw_interrupt           = BochsCPU::Callbacks::hw_interrupt_cb;
                     hooks[i].inp                    = BochsCPU::Callbacks::inp_cb;
                     hooks[i].inp2                   = BochsCPU::Callbacks::inp2_cb;
-                    hooks[i].outp                   = BochsCPU::Callbacks::outp_cb;
+                    hooks[i].interrupt              = BochsCPU::Callbacks::interrupt_cb;
+                    hooks[i].lin_access             = BochsCPU::Callbacks::lin_access_cb;
+                    hooks[i].mwait                  = BochsCPU::Callbacks::mwait_cb;
                     hooks[i].opcode                 = BochsCPU::Callbacks::opcode_cb;
-                    hooks[i].exception              = BochsCPU::Callbacks::exception_cb;
-                    hooks2[i]                       = &hooks[i];
+                    hooks[i].outp                   = BochsCPU::Callbacks::outp_cb;
+                    hooks[i].phy_access             = BochsCPU::Callbacks::phy_access_cb;
+                    hooks[i].prefetch_hint          = BochsCPU::Callbacks::prefetch_hint_cb;
+                    hooks[i].repeat_iteration       = BochsCPU::Callbacks::repeat_iteration_cb;
+                    hooks[i].reset                  = BochsCPU::Callbacks::reset_cb;
+                    hooks[i].tlb_cntrl              = BochsCPU::Callbacks::tlb_cntrl_cb;
+                    hooks[i].ucnear_branch          = BochsCPU::Callbacks::ucnear_branch_cb;
+                    hooks[i].vmexit                 = BochsCPU::Callbacks::vmexit_cb;
+                    hooks[i].wrmsr                  = BochsCPU::Callbacks::wrmsr_cb;
+
+                    //
+                    // Chain the hook
+                    //
+                    hook_chain[i] = &hooks[i];
                     i++;
                 }
 
-                ::bochscpu_cpu_run(&s.cpu, hooks2);
+                ::bochscpu_cpu_run(s.cpu.__cpu, hook_chain);
             },
             "Start the execution with a set of hooks")
         .def(
             "stop",
             [](BochsCPU::Session& s)
             {
-                ::bochscpu_cpu_stop(&s.cpu);
+                ::bochscpu_cpu_stop(s.cpu.__cpu);
             },
             "Stop the execution");
 }

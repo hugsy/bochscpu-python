@@ -16,15 +16,28 @@
 #error Not supported
 #endif // _WIN32
 
+#include <nanobind/stl/shared_ptr.h>
+
 #include "bochscpu/bochscpu.hpp"
 
 // #define DEBUG
 
 #ifdef DEBUG
-#define GEN_FMT "[%s::%d] "
-#define dbg(fmt, ...) ::printf(GEN_FMT fmt "\n", __FUNCTION__, __LINE__, __VA_ARGS__)
+#define dbg(fmt, ...) ::printf("[*] %s:%d - " fmt "\n", __FUNCTION__, __LINE__, __VA_ARGS__)
+#define info(fmt, ...) ::printf("[+] %s:%d - " fmt "\n", __FUNCTION__, __LINE__, __VA_ARGS__)
+#define warn(fmt, ...) ::printf("[!] %s:%d - " fmt "\n", __FUNCTION__, __LINE__, __VA_ARGS__)
+#define err(fmt, ...) ::printf("[-] %s:%d - " fmt "\n", __FUNCTION__, __LINE__, __VA_ARGS__)
 #else
 #define dbg(fmt, ...)
+#if defined(_WIN32)
+#define info(fmt, ...) ::printf("[+] " fmt "\n", __VA_ARGS__)
+#define warn(fmt, ...) ::printf("[!] " fmt "\n", __VA_ARGS__)
+#define err(fmt, ...) ::printf("[-] " fmt "\n", __VA_ARGS__)
+#elif defined(linux) || defined(__linux)
+#define info(fmt, ...) ::printf("[+] " fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
+#define warn(fmt, ...) ::printf("[!] " fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
+#define err(fmt, ...) ::printf("[-] " fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
+#endif
 #endif // DEBUG
 
 //
@@ -56,7 +69,7 @@
 namespace BochsCPU
 {
 ///
-/// @brief Src https://github.com/lubomyr/bochs/blob/8e0b9abcd81cd24d4d9c68f7fdef2f53bc180d33/cpu/cpu.h#L306
+/// @brief Src https://github.com/bochs-emu/Bochs/blob/86eff7597d72af912d708a10c0a2000d0b9973c2/bochs/cpu/cpu.h#L312
 ///
 ///
 enum class BochsException : uint32_t
@@ -227,7 +240,7 @@ namespace Cpu
 
 enum class ControlRegisterFlag : uint64_t
 {
-    /// CR0 - - AMD Manual Vol2 - 3.1.1
+    /// CR0 - AMD Manual Vol2 - 3.1.1
     PG = 31, // Paging R/W
     CD = 30, // Cache Disable R/W
     NW = 29, // Not Writethrough R/W
@@ -241,7 +254,7 @@ enum class ControlRegisterFlag : uint64_t
     PE = 0,  // Protection Enabled R/W
 
 
-    /// CR4 - - AMD Manual Vol2 - 3.7.1
+    /// CR4 - AMD Manual Vol2 - 3.7.1
     OSXSAVE    = 18, // XSAVE and Processor Extended States Enable Bit R/W
     FSGSBASE   = 16, // Enable RDFSBASE, RDGSBASE, WRFSBASE, and WRGSBASE instructions R/W
     OSXMMEXCPT = 10, // Operating System Unmasked Exception Support R/W
@@ -255,6 +268,17 @@ enum class ControlRegisterFlag : uint64_t
     TSD        = 2,  // Time Stamp Disable R/W
     PVI        = 1,  // Protected-Mode Virtual Interrupts R/W
     VME        = 0,  // Virtual-8086 Mode Extensions R/W
+
+
+    /// XCR0 - AMD Manual Vol2 - 3.7.1
+    X   = 63, // Reserved specifically for XCR0 bit vector expansion.
+    LWP = 62, // When set, Lightweight Profiling (LWP) extensions are enabled and XSAVE/XRSTOR supports LWP state
+              // management.
+    YMM = 2,  // When set, 256-bit SSE state management is supported by XSAVE/XRSTOR. Must be set to enable AVX
+              // extensions
+    SSE = 1, // When set, 128-bit SSE state management is supported by XSAVE/XRSTOR. This bit must be set if YMM is set.
+             // Must be set to enable AVX extensions.
+    x87 = 0, // x87 FPU state management is supported by XSAVE/XRSTOR. Must be set to 1.
 };
 
 enum class FlagRegisterFlag : uint64_t
@@ -314,26 +338,26 @@ struct FeatureRegister : std::bitset<64>
 };
 
 
-static uint32_t g_sessionId {0};
+static uint32_t g_sessionId = 0;
 
 struct CPU
 {
     CPU()
     {
-        this->id  = g_sessionId++;
-        this->cpu = ::bochscpu_cpu_new(this->id);
-        if ( !this->cpu )
+        this->id    = g_sessionId++;
+        this->__cpu = ::bochscpu_cpu_new(this->id);
+        if ( !this->__cpu )
             throw std::runtime_error("Invalid CPU ID");
         dbg("Created CPU#%lu", this->id);
     }
 
     ~CPU()
     {
-        ::bochscpu_cpu_delete(this->cpu);
+        ::bochscpu_cpu_delete(this->__cpu);
     }
 
     uint32_t id {0};
-    bochscpu_cpu_t cpu {};
+    bochscpu_cpu_t __cpu {};
 };
 } // namespace Cpu
 
@@ -510,8 +534,15 @@ static inline std::unique_ptr<std::function<void(uint64_t)>> missing_page_handle
 static void
 missing_page_cb(uint64_t gpa)
 {
-    dbg("missing gpa=%#llx", gpa);
-    (*missing_page_handler)(gpa);
+    if ( BochsCPU::Memory::missing_page_handler )
+    {
+        dbg("Missing GPA=%#llx", gpa);
+        (*missing_page_handler)(gpa);
+    }
+    else
+    {
+        err("Missing GPA=%#llx - no handler defined", gpa);
+    }
 }
 } // namespace Memory
 

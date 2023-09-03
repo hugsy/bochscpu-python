@@ -1,6 +1,3 @@
-import ctypes
-import dataclasses
-import platform
 import struct
 import time
 
@@ -10,9 +7,11 @@ import keystone
 import bochscpu
 import bochscpu.cpu
 import bochscpu.memory
+import bochscpu.utils
+
 
 DEBUG = True
-PAGE_SIZE = bochscpu.memory.PageSize()
+PAGE_SIZE = bochscpu.memory.page_size()
 
 
 class Stats:
@@ -30,69 +29,6 @@ stats = Stats()
 def dbg(x: str):
     if DEBUG:
         print(f"[Py] {x}")
-
-
-def mmap(sz: int = PAGE_SIZE, perm: str = "rw"):
-    assert platform.system() != "Windows"
-    PROT_READ = 0x1
-    PROT_WRITE = 0x2
-    PROT_EXEC = 0x4
-    MAP_PRIVATE = 0x2
-    MAP_ANONYMOUS = 0x20
-    libc = ctypes.CDLL("libc.so.6")
-    mmap = libc.mmap
-    mmap.restype = ctypes.c_void_p
-    mmap.argtypes = [
-        ctypes.c_void_p,
-        ctypes.c_size_t,
-        ctypes.c_int,
-        ctypes.c_int,
-        ctypes.c_int,
-        ctypes.c_long,
-    ]
-    flags = 0
-    match perm:
-        case "ro":
-            flags = PROT_READ
-        case "rw":
-            flags = PROT_READ | PROT_WRITE
-        case "rwx":
-            flags = PROT_READ | PROT_WRITE | PROT_EXEC
-        case _:
-            raise ValueError
-    return mmap(-1, sz, flags, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)
-
-
-def VirtualAlloc(sz: int = PAGE_SIZE, perm: str = "rw"):
-    if platform.system() == "Linux":
-        return mmap(sz, perm)
-    MEM_COMMIT = 0x1000
-    MEM_RESERVE = 0x2000
-    PAGE_NOACCESS = 0x01
-    PAGE_READONLY = 0x02
-    PAGE_READWRITE = 0x04
-    PAGE_EXECUTE_READWRITE = 0x40
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-    VirtualAlloc = kernel32.VirtualAlloc
-    VirtualAlloc.argtypes = [
-        ctypes.c_void_p,
-        ctypes.c_size_t,
-        ctypes.c_ulong,
-        ctypes.c_ulong,
-    ]
-    VirtualAlloc.restype = ctypes.c_void_p
-    flags = PAGE_NOACCESS
-    match perm:
-        case "ro":
-            flags = PAGE_READONLY
-        case "rw":
-            flags = PAGE_READWRITE
-        case "rwx":
-            flags = PAGE_EXECUTE_READWRITE
-        case _:
-            raise ValueError
-
-    return VirtualAlloc(None, sz, MEM_COMMIT | MEM_RESERVE, flags)
 
 
 def dump_page_table(addr: int, level: int = 0):
@@ -116,39 +52,12 @@ def dump_page_table(addr: int, level: int = 0):
         dump_page_table(entry, level + 1)
 
 
-def dump_registers(state: bochscpu.State, type: int = 0):
-    # UM
-    print(
-        f"""
-rax={state.rax:016x} rbx={state.rbx:016x} rcx={state.rcx:016x}
-rdx={state.rdx:016x} rsi={state.rsi:016x} rdi={state.rdi:016x}
-rip={state.rip:016x} rsp={state.rsp:016x} rbp={state.rbp:016x}
- r8={ state.r8:016x}  r9={ state.r9:016x} r10={state.r10:016x}
-r11={state.r11:016x} r12={state.r12:016x} r13={state.r13:016x}
-r14={state.r14:016x} r15={state.r15:016x} efl={state.rflags:016x}
-cs={int(state.cs):04x}  ss={int(state.ss):04x}  ds={int(state.ds):04x}  es={int(state.es):04x}  fs={int(state.fs):04x}  gs={int(state.gs):04x}
-"""
-    )
-
-    if type < 1:
-        return
-
-    # KM
-    print(
-        f"""
-cr0={state.cr0:016x}  cr2={state.cr2:016x}  cr3={state.cr3:016x}  cr4={state.cr4:016x}
-dr0={state.dr0:016x}  dr1={state.dr1:016x}  dr2={state.dr2:016x}  dr3={state.dr3:016x}
-dr6={state.dr6:016x}  dr7={state.dr7:016x}  efer={state.efer:016x}
-"""
-    )
-
-
 def missing_page_cb(gpa):
     raise Exception(f"missing_page_cb({gpa=:#x})")
 
 
 def exception_cb(
-    sess: bochscpu.session,
+    sess: bochscpu.Session,
     cpu_id: int,
     vector: bochscpu.cpu.ExceptionType,
     error_code: bochscpu.InstructionType,
@@ -160,7 +69,7 @@ def exception_cb(
 
 
 def lin_access_cb(
-    sess: bochscpu.session,
+    sess: bochscpu.Session,
     cpu_id: int,
     lin: int,
     phy: int,
@@ -173,7 +82,7 @@ def lin_access_cb(
     stats.mem_access[access] += 1
 
 
-def after_execution_cb(sess: bochscpu.session, cpu_id: int, insn: int):
+def after_execution_cb(sess: bochscpu.Session, cpu_id: int, insn: int):
     global stats
     stats.insn_nb += 1
 
@@ -185,58 +94,37 @@ def emulate(code: bytes):
     #
     # Setup the PF handler very early to let Python handle it, rather than rust panicking
     #
-    sess = bochscpu.session()
-    dbg("registering our own missing page handler")
+    sess = bochscpu.Session()
+    dbg(f"created session for cpu#{sess.cpu.id}")
+
     sess.missing_page_handler = missing_page_cb
-
-    #
-    # Setup control registers to enable PG/PE and long mode
-    #
-    cr0 = bochscpu.cpu.ControlRegister()
-    cr0.PG = True
-    cr0.AM = True
-    cr0.WP = True
-    cr0.NE = True
-    cr0.ET = True
-    cr0.PE = True
-
-    cr4 = bochscpu.cpu.ControlRegister()
-    cr4.PAE = True  # required for long mode
-
-    rflags = bochscpu.cpu.FlagRegister()
-    rflags.IOPL = 1
-
-    efer = bochscpu.cpu.FeatureRegister()
-    efer.NXE = True
-    efer.LMA = True
-    efer.LME = True
-    efer.SCE = True
+    dbg("registered our own missing page handler")
 
     #
     # Manually craft the guest virtual & physical memory layout into a pagetable
     # Once done bind the resulting GPAs it to bochs
     #
-    shellcode_hva = VirtualAlloc()
-    shellcode_gva = 0x0400_0000
-    shellcode_gpa = 0x1400_0000
+    shellcode_hva = bochscpu.memory.allocate_host_page()
+    shellcode_gva = 0x0000_0041_0000_0000
+    shellcode_gpa = 0x0000_0000_1400_0000
     dbg(f"inserting {shellcode_gva=:#x} -> {shellcode_gpa=:#x} ->  {shellcode_hva=:#x}")
     bochscpu.memory.page_insert(shellcode_gpa, shellcode_hva)
 
-    stack_hva = VirtualAlloc()
-    stack_gva = 0x0401_0000
+    stack_hva = bochscpu.memory.allocate_host_page()
+    stack_gva = 0x0401_0000_0000
     stack_gpa = 0x1401_0000
     dbg(f"inserting {stack_gva=:#x} -> {stack_gpa=:#x} -> {stack_hva=:#x}")
     bochscpu.memory.page_insert(stack_gpa, stack_hva)
 
     pt = bochscpu.memory.PageMapLevel4Table()
-    pt.Insert(stack_gva, stack_gpa, RW)
-    pt.Insert(shellcode_gva, shellcode_gpa, CODE)
+    pt.insert(stack_gva, stack_gpa, RW)
+    pt.insert(shellcode_gva, shellcode_gpa, CODE)
 
-    assert pt.Translate(stack_gva) == stack_gpa
-    assert pt.Translate(shellcode_gva) == shellcode_gpa
+    assert pt.translate(stack_gva) == stack_gpa
+    assert pt.translate(shellcode_gva) == shellcode_gpa
 
     pml4 = 0x10_0000
-    layout = pt.Commit(pml4)
+    layout = pt.commit(pml4)
 
     for hva, gpa in layout:
         bochscpu.memory.page_insert(gpa, hva)
@@ -261,17 +149,27 @@ def emulate(code: bytes):
     #
     # Create a state and load it into a new CPU
     #
-    cpu = sess.cpu
-    dbg(f"created cpu#{cpu.id}")
-
     state = bochscpu.State()
+
+    #
+    # Setup control registers to enable PG/PE and long mode
+    #
+    bochscpu.cpu.set_long_mode(state)
+
+    #
+    # Initialize CR3 with PML4 base.
+    #
+    state.cr3 = pml4
+
+    #
+    # Set the other registers
+    #
     state.rsp = stack_gva + PAGE_SIZE // 2
     state.rip = shellcode_gva
-    state.cr0 = int(cr0)
-    state.cr3 = pml4
-    state.cr4 = int(cr4)
-    state.efer = int(efer)
-    state.rflags = int(rflags)
+
+    #
+    # Set the selectors
+    #
     cs = bochscpu.Segment()
     cs.present = True
     cs.selector = 0x33
@@ -290,22 +188,28 @@ def emulate(code: bytes):
     state.es = ds
     state.fs = ds
     state.gs = ds
+
+    #
+    # Assign the state
+    #
     sess.cpu.state = state
     dbg("loaded state for cpu#0")
     dbg("dumping start state")
-    dump_registers(state)
+    bochscpu.utils.dump_registers(sess.cpu.state)
 
-    hooks = []
     hook = bochscpu.Hook()
     hook.exception = exception_cb
     hook.after_execution = after_execution_cb
     hook.lin_access = lin_access_cb
-    hooks.append(hook)
-    dbg("hooks ok")
+    dbg("hook setup ok")
 
     dbg("starting the vm...")
     t1 = time.time_ns()
-    sess.run(hooks)
+    sess.run(
+        [
+            hook,
+        ]
+    )
     t2 = time.time_ns()
     dbg(
         f"vm stopped, execution: {stats.insn_nb} insns in {t2-t1}ns (~{int(stats.insn_nb // ((t2-t1)/1_000_000_000))}) insn/s"
@@ -324,7 +228,10 @@ def emulate(code: bytes):
     dbg("reading new state")
     new_state = sess.cpu.state
     dbg("dumping final state")
-    dump_registers(new_state)
+    bochscpu.utils.dump_registers(new_state)
+
+    bochscpu.memory.release_host_page(stack_hva)
+    bochscpu.memory.release_host_page(shellcode_hva)
     return
 
 

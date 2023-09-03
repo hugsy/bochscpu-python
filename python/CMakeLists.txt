@@ -16,26 +16,26 @@ list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
 
 nanobind_add_module(
-    bochscpu NB_STATIC
+    _bochscpu NB_STATIC
     src/bochscpu_callbacks.cpp
     src/bochscpu_cpu.cpp
     src/bochscpu_mem.cpp
     src/bochscpu.cpp
 )
 
-target_include_directories(bochscpu PRIVATE ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/python/inc)
-target_link_directories(bochscpu PRIVATE ${CMAKE_SOURCE_DIR}/bochscpu/lib/${CMAKE_BUILD_TYPE})
-target_link_libraries(bochscpu PRIVATE)
+target_include_directories(_bochscpu PRIVATE ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/python/inc)
+target_link_directories(_bochscpu PRIVATE ${CMAKE_SOURCE_DIR}/bochscpu/lib/${CMAKE_BUILD_TYPE})
+target_link_libraries(_bochscpu PRIVATE)
 
 if(MSVC)
-    target_link_libraries(bochscpu PRIVATE Userenv.lib Bcrypt.lib Ws2_32.lib kernel32.lib ntdll.lib bochscpu_ffi.lib)
+    target_link_libraries(_bochscpu PRIVATE Userenv.lib Bcrypt.lib Ws2_32.lib kernel32.lib ntdll.lib bochscpu_ffi.lib)
 else()
-    target_link_libraries(bochscpu PRIVATE bochscpu_ffi)
+    target_link_libraries(_bochscpu PRIVATE bochscpu_ffi)
 endif()
 
-install(TARGETS bochscpu LIBRARY DESTINATION .)
-install(DIRECTORY bochscpu-stubs DESTINATION .) # Folder name must be *-stubs, see PEP 561
+install(DIRECTORY bochscpu DESTINATION .)
+install(TARGETS _bochscpu LIBRARY DESTINATION bochscpu)
 
 if(MSVC)
-    install(FILES $<TARGET_PDB_FILE:bochscpu> DESTINATION . OPTIONAL)
+    install(FILES $<TARGET_PDB_FILE:_bochscpu> DESTINATION . OPTIONAL)
 endif(MSVC)
