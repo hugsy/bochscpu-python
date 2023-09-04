@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "bochscpu-python"
-version = "0.1.5"
+version = "0.1.6"
 description = "Python bindings for BochsCPU."
 readme = "./README.md"
 license.file = "./LICENSE"
