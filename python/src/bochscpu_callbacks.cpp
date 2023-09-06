@@ -33,7 +33,6 @@ before_execution_cb(context_t* ctx, uint32_t cpu_id, void* insn)
     ExecuteCallback(ctx, before_execution, cpu_id, insn);
 }
 
-
 void
 after_execution_cb(context_t* ctx, uint32_t cpu_id, void* insn)
 {

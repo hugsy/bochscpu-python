@@ -5,13 +5,14 @@ import keystone
 import bochscpu
 import bochscpu.cpu
 import bochscpu.memory
+import bochscpu.utils
 
 
 def hexdump(
     source: bytes, length: int = 0x10, separator: str = ".", base: int = 0x00
 ) -> str:
     result = []
-    align = 0x8 * 2 + 2
+    align = length + 2
 
     for i in range(0, len(source), length):
         chunk = bytearray(source[i : i + length])
@@ -25,8 +26,12 @@ def missing_page_cb(gpa: int):
     raise Exception(f"missing_page_cb({gpa=:#x})")
 
 
-def after_execution_cb(sess: bochscpu.Session, cpu_id: int, insn: int):
-    logging.info(f"[CPU#{cpu_id}] {insn=}")
+def before_execution_cb(sess: bochscpu.Session, cpu_id: int, _: int):
+    logging.info(f"[CPU#{cpu_id}] before PC={sess.cpu.rip:#x}")
+
+
+def after_execution_cb(sess: bochscpu.Session, cpu_id: int, _: int):
+    logging.info(f"[CPU#{cpu_id}] after PC={sess.cpu.rip:#x}")
 
 
 def exception_cb(
@@ -51,8 +56,8 @@ if __name__ == "__main__":
     ks = keystone.Ks(keystone.KS_ARCH_X86, keystone.KS_MODE_16)
     code_str = """
 mov ah, 0xe
-mov al, 0x41
-int 0x16
+mov al, 'A'
+int 0x10
 hlt
 """
     code, _ = ks.asm(code_str)
@@ -61,15 +66,34 @@ hlt
     logging.debug(f"Compiled {len(code)} bytes")
     code = code.ljust(510, b"\x00") + b"\x55\xaa"
 
-    # print(hexdump(code))
+    print(hexdump(code))
 
     #
-    # Expose the code to bochs
+    # Create the code page
     #
-    hva = bochscpu.memory.allocate_host_page()
-    gpa = 0x0000_7000
-    bochscpu.memory.page_insert(gpa, hva)
-    bochscpu.memory.phy_write(gpa, code)
+    code_hva = bochscpu.memory.allocate_host_page()
+    code_gpa = 0x0000_7000
+    bochscpu.memory.page_insert(code_gpa, code_hva)
+    bochscpu.memory.phy_write(code_gpa, code)
+
+    _cs = bochscpu.Segment()
+    _cs.base = code_gpa + 0x800
+    _cs.limit = 0x0000_0FFF
+    _cs.selector = 0x0010
+    cs_attr = bochscpu.cpu.SegmentFlags()
+    cs_attr.P = True
+    cs_attr.E = True
+    cs_attr.DB = False
+    cs_attr.G = False
+    _cs.attr = int(cs_attr)
+    _cs.present = True
+
+    _ss = bochscpu.Segment()
+    _ss.present = True
+    _ss.base = code_gpa
+    _ss.selector = 0
+    _ss.attr = 0
+    _ss.limit = 0x0000_000F
 
     #
     # Create the VM with the desired callbacks
@@ -78,14 +102,22 @@ hlt
     sess.missing_page_handler = missing_page_cb
 
     state = bochscpu.State()
-    state.cr0 = 0
-    state.cr4 = 0
-    state.rsp = gpa + bochscpu.memory.page_size() // 2
-    state.rip = gpa
+    bochscpu.cpu.set_real_mode(state)
+
+    #
+    # Assign segment to the state, CS and SS are always required
+    #
+    state.cs = _cs
+    state.ss = _ss
+
+    state.rsp = 0x0000
+    state.rip = 0x0C00
+
     sess.cpu.state = state
 
     h = bochscpu.Hook()
     h.exception = exception_cb
+    h.before_execution = before_execution_cb
     h.after_execution = after_execution_cb
 
     sess.run(
@@ -97,4 +129,4 @@ hlt
     #
     # Cleanup
     #
-    bochscpu.memory.release_host_page(hva)
+    bochscpu.memory.release_host_page(code_hva)

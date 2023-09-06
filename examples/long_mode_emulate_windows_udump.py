@@ -147,14 +147,21 @@ def switch_to_thread(state: bochscpu.State, thread: udmp_parser.Thread):
     _cs.base = 0
     _cs.limit = 0xFFFF_FFFF
     _cs.selector = thread.Context.SegCs
-    _cs.attr = 0x22FB
-    _cs.present = True
+    _cs_attr = bochscpu.cpu.SegmentFlags()
+    _cs_attr.A = True
+    _cs_attr.R = True
+    _cs_attr.E = True
+    _cs_attr.S = True
+    _cs_attr.P = True
+    _cs_attr.L = True
+    _cs.attr = int(_cs_attr)
+
     _ds = bochscpu.Segment()
     _ds.base = 0
     _ds.limit = 0xFFFF_FFFF
     _ds.selector = thread.Context.SegDs
     _ds.attr = 0xCF3
-    _ds.present = True
+
     _es = bochscpu.Segment()
     _es.base = 0
     _es.limit = 0xFFFF_FFFF

@@ -10,6 +10,7 @@ class ControlRegister:
     @ref AMD Manual Vol 2 - 3-9 (EFER)
     """
 
+    def __init__(self, initial_value: int = 0) -> None: ...
     @property
     def AM(self) -> bool:
         """
@@ -338,8 +339,9 @@ class ControlRegister:
     def x87(self) -> bool:
         """Get x87 CR4 Flag"""
         ...
-    def __init__(self) -> None: ...
     def __int__(self) -> int: ...
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
 
 class ControlRegisterFlag(Flag):
     """
@@ -395,12 +397,6 @@ class ControlRegisterFlag(Flag):
     VME: ControlRegisterFlag
     """ Virtual-8086 Mode Extensions R/W """
 
-    def __init__(*args, **kwargs):
-        """
-        Initialize self.  See help(type(self)) for accurate signature.
-        """
-        ...
-
 class FlagRegisterFlag(Flag):
     ID: FlagRegisterFlag
     """ID Flag R/W"""
@@ -448,6 +444,7 @@ class FlagRegisterFlag(Flag):
     """Carry Flag R/W"""
 
 class FlagRegister:
+    def __init__(self, initial_value: int = 0) -> None: ...
     @property
     def ID(self) -> bool:
         """Get ID Flag R/W"""
@@ -601,6 +598,8 @@ class FlagRegister:
         """Set Carry Flag R/W"""
         ...
     def __int__(self) -> int: ...
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
 
 class FeatureRegisterFlag(Flag):
     TCE: FeatureRegisterFlag
@@ -621,6 +620,7 @@ class FeatureRegisterFlag(Flag):
     """System Call Extensions R/W"""
 
 class FeatureRegister:
+    def __init__(self, initial_value: int = 0) -> None: ...
     @property
     def TCE(self) -> bool:
         """Get Translation Cache Extension R/W"""
@@ -686,6 +686,156 @@ class FeatureRegister:
         """Set System Call Extensions R/W"""
         ...
     def __int__(self) -> int: ...
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
+
+class SegmentRegisterFlag(Enum):
+    """SegmentRegisterFlag class"""
+
+    RPL0: SegmentRegisterFlag
+    """Low-bit for Requested Privilege Level"""
+    RPL1: SegmentRegisterFlag
+    """High-bit for Requested Privilege Level"""
+
+class SegmentFlag(Enum):
+    """SegmentFlag class"""
+
+    A: SegmentFlag
+    """Accessed"""
+    R: SegmentFlag
+    """Readable - CS only"""
+    W: SegmentFlag
+    """Writable - DS/ES/FS/SS only"""
+    C: SegmentFlag
+    """Conforming"""
+    D: SegmentFlag
+    """Expend-down (Data)"""
+    E: SegmentFlag
+    """Executable - CS only (1) otherwise (0)"""
+    S: SegmentFlag
+    """SegmentType - CS/SS only (1)"""
+    DPL0: SegmentFlag
+    """Low-bit for Descriptor Privilege Level"""
+    DPL1: SegmentFlag
+    """High-bit for Descriptor Privilege Level"""
+    P: SegmentFlag
+    """Present"""
+    AVL: SegmentFlag
+    """Available bit"""
+    L: SegmentFlag
+    """Long bit - CS only"""
+    DB: SegmentFlag
+    """(32b) Default-Operand Size (D) Bit - CS only (1)"""
+    G: SegmentFlag
+    """Granularity (G) Bit - CS only"""
+
+class SegmentFlags:
+    """SegmentFlags class"""
+
+    @property
+    def A(self) -> bool:
+        """Get Accessed bit"""
+        ...
+    @A.setter
+    def A(self, value: bool):
+        """Set Accessed bit"""
+        ...
+    @property
+    def R(self) -> bool:
+        """Get Readable - CS only"""
+        ...
+    @R.setter
+    def R(self, value: bool):
+        """Set Readable - CS only"""
+        ...
+    @property
+    def W(self) -> bool:
+        """Get Writable - DS/ES/FS/SS only"""
+        ...
+    @W.setter
+    def W(self, value: bool):
+        """Set Writable - DS/ES/FS/SS only"""
+        ...
+    @property
+    def D(self) -> bool:
+        """Get Expand-Down bit"""
+        ...
+    @D.setter
+    def D(self, value: bool):
+        """Set Expand-Down bit"""
+        ...
+    @property
+    def C(self) -> bool:
+        """Get Conforming"""
+        ...
+    @C.setter
+    def C(self, value: bool):
+        """Set Conforming"""
+        ...
+    @property
+    def E(self) -> bool:
+        """Get Executable - CS only (1) otherwise (0)"""
+        ...
+    @E.setter
+    def E(self, value: bool):
+        """Set Executable - CS only (1) otherwise (0)"""
+        ...
+    @property
+    def S(self) -> bool:
+        """Get SegmentType - CS/SS only (1)"""
+        ...
+    @S.setter
+    def S(self, value: bool):
+        """Set SegmentType - CS/SS only (1)"""
+        ...
+    @property
+    def DPL(self) -> int:
+        """Get Descriptor Privilege Level"""
+        ...
+    @DPL.setter
+    def DPL(self, value: int):
+        """Set Descriptor Privilege Level"""
+        ...
+    @property
+    def P(self) -> bool:
+        """Get Present bit"""
+        ...
+    @P.setter
+    def P(self, value: bool):
+        """Set Present bit"""
+        ...
+    @property
+    def AVL(self) -> bool:
+        """AvailGet able bit"""
+    @AVL.setter
+    def AVL(self, value: bool):
+        """Set Available bit"""
+        ...
+    @property
+    def L(self) -> bool:
+        """Get Long bit - CS only"""
+    @L.setter
+    def L(self, value: bool):
+        """Set Long bit - CS only"""
+        ...
+    @property
+    def DB(self) -> bool:
+        """Get (32b) Default-Operand Size (D) Bit - CS only (1)"""
+    @DB.setter
+    def DB(self, value: bool):
+        """(Set 32b) Default-Operand Size (D) Bit - CS only (1)"""
+        ...
+    @property
+    def G(self) -> bool:
+        """Get Granularity (G) Bit - CS only"""
+    @G.setter
+    def G(self, value: bool):
+        """Set Granularity (G) Bit - CS only"""
+        ...
+    def __int__(self) -> int: ...
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
+    def __init__(self, initial_value: int = 0) -> None: ...
 
 class ExceptionType(Enum):
     DivideError: ExceptionType
