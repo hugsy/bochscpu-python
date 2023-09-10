@@ -766,19 +766,19 @@ class SegmentFlags:
         ...
     @property
     def C(self) -> bool:
-        """Get Conforming"""
+        """Get Conforming bit"""
         ...
     @C.setter
     def C(self, value: bool):
-        """Set Conforming"""
+        """Set Conforming bit"""
         ...
     @property
     def E(self) -> bool:
-        """Get Executable - CS only (1) otherwise (0)"""
+        """Get Executable bit - CS only (1) otherwise (0)"""
         ...
     @E.setter
     def E(self, value: bool):
-        """Set Executable - CS only (1) otherwise (0)"""
+        """Set Executable bit - CS only (1) otherwise (0)"""
         ...
     @property
     def S(self) -> bool:
