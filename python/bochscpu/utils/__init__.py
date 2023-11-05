@@ -15,6 +15,7 @@ def dump_registers(state: _bochscpu.State, include_kernel: bool = False):
         state (_bochscpu.State): _description_
         include_kernel (bool): _description_
     """
+    # TODO adjust registers depending on cpu mode
     print(
         f"""
 rax={state.rax:016x} rbx={state.rbx:016x} rcx={state.rcx:016x}

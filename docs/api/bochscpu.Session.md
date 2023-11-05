@@ -6,24 +6,24 @@ Class session
 
 ---
 
-### <kbd>property</kbd> cpu
+### <kbd>property</kbd> Session.cpu
 
 Get the CPU associated to the session 
 
 ---
 
-### <kbd>property</kbd> missing_page_handler
+### <kbd>property</kbd> Session.missing_page_handler
 
 Set the missing page callback 
 
 
 ---
 
-### <kbd>handler</kbd> run
+### <kbd>handler</kbd> Session.run
 
 ---
 
-### <kbd>handler</kbd> stop
+### <kbd>handler</kbd> Session.stop
 
 
 
