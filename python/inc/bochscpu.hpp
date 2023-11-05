@@ -236,6 +236,34 @@ exception_cb(context_t* ctx, uint32_t cpu_id, unsigned vector, unsigned error_co
 namespace Cpu
 {
 
+enum class SegmentRegisterFlag : uint16_t
+{
+    RPL0 = 0, // Low-bit for Requested Privilege Level
+    RPL1 = 1, // High-bit for Requested Privilege Level
+};
+
+
+enum class SegmentFlag : uint16_t
+{
+    /// CS - AMD Manual Vol2 - 4.7.2
+    /// DS - AMD Manual Vol2 - 4.7.3
+    A    = 0,  // Accessed bit
+    R    = 1,  // Readable bit - CS only
+    W    = 1,  // Writable bit - DS/ES/FS/SS only
+    C    = 2,  // Conforming bit
+    D    = 2,  // Expend-down (Data)
+    E    = 3,  // Executable bit (Code - 1)
+    S    = 4,  // SegmentType bit - CS/SS only (1)
+    DPL0 = 5,  // Low-bit for Descriptor Privilege Level
+    DPL1 = 6,  // High-bit for Descriptor Privilege Level
+    P    = 7,  // Present bit
+    AVL  = 12, // Available bit
+    L    = 13, // Long bit - CS only
+    DB   = 14, // (32b) Default-Operand Size (D) Bit - CS only (1)
+    G    = 15, // Granularity (G) Bit - CS only
+};
+
+
 enum class ControlRegisterFlag : uint64_t
 {
     /// CR0 - AMD Manual Vol2 - 3.1.1
@@ -322,16 +350,19 @@ struct ControlRegister : std::bitset<64>
 {
 };
 
-
 struct FlagRegister : std::bitset<64>
 {
-    FlagRegister()
-    {
-        set((int)FlagRegisterFlag::Reserved1, true);
-    }
 };
 
 struct FeatureRegister : std::bitset<64>
+{
+};
+
+struct SegmentRegisterFlags : std::bitset<2>
+{
+};
+
+struct SegmentFlags : std::bitset<16>
 {
 };
 

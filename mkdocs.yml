@@ -1,0 +1,21 @@
+site_name: Python bindings for `bochscpu`
+theme:
+  name: material
+  font:
+    text: Roboto
+    code: Roboto Mono
+  features:
+    - navigation.instant
+    - navigation.tabs
+
+
+nav:
+- Home: README.md
+- Gallery: gallery.md
+- Setup:
+  - Installation: install.md
+  - Building: build.md
+- Usage:
+  - Basic Examples: examples.md
+- Development:
+  - API: api/README.md

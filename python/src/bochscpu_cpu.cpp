@@ -1,10 +1,40 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/operators.h>
+#include <nanobind/stl/string.h>
+
+#include <sstream>
 
 #include "bochscpu.hpp"
 
 namespace nb = nanobind;
 using namespace nb::literals;
+
+#define GenericGetterSetterStatic(cls, name, enum_cls, desc, value)                                                    \
+    def_prop_rw(                                                                                                       \
+        #name,                                                                                                         \
+        [](cls const& x)                                                                                               \
+        {                                                                                                              \
+            return x.test((int)enum_cls::name);                                                                        \
+        },                                                                                                             \
+        [](cls& x, bool b)                                                                                             \
+        {                                                                                                              \
+            x.set((int)enum_cls::name, value);                                                                         \
+        },                                                                                                             \
+        desc)
+
+#define GenericGetterSetter(cls, name, enum_cls, desc)                                                                 \
+    def_prop_rw(                                                                                                       \
+        #name,                                                                                                         \
+        [](cls const& x)                                                                                               \
+        {                                                                                                              \
+            return x.test((int)enum_cls::name);                                                                        \
+        },                                                                                                             \
+        [](cls& x, bool b)                                                                                             \
+        {                                                                                                              \
+            x.set((int)enum_cls::name, b);                                                                             \
+        },                                                                                                             \
+        desc)
+
 
 ///
 /// @brief BochsCPU CPU submodule Python interface
@@ -77,314 +107,81 @@ bochscpu_cpu_module(nb::module_& base_module)
 
         .export_values();
 
+
+#define GetterSetter(name, desc)                                                                                       \
+    GenericGetterSetter(BochsCPU::Cpu::ControlRegister, name, BochsCPU::Cpu::ControlRegisterFlag, desc)
+
     nb::class_<BochsCPU::Cpu::ControlRegister>(m, "ControlRegister")
         .def(nb::init<>())
-        .def_prop_rw(
-            "PG",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::PG);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::PG, onoff);
-            })
-        .def_prop_rw(
-            "CD",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::CD);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::CD, onoff);
-            })
-        .def_prop_rw(
-            "NW",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::NW);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::NW, onoff);
-            })
-        .def_prop_rw(
-            "AM",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::AM);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::AM, onoff);
-            })
-        .def_prop_rw(
-            "WP",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::WP);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::WP, onoff);
-            })
-        .def_prop_rw(
-            "NE",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::NE);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::NE, onoff);
-            })
-        .def_prop_rw(
-            "ET",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::ET);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::ET, onoff);
-            })
-        .def_prop_rw(
-            "TS",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::TS);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::TS, onoff);
-            })
-        .def_prop_rw(
-            "EM",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::EM);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::EM, onoff);
-            })
-        .def_prop_rw(
-            "MP",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::MP);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::MP, onoff);
-            })
-        .def_prop_rw(
-            "PE",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::PE);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::PE, onoff);
-            })
+        .def(nb::init<uint64_t>())
 
-        .def_prop_rw(
-            "OSXSAVE",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::OSXSAVE);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::OSXSAVE, onoff);
-            })
-        .def_prop_rw(
-            "FSGSBASE",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::FSGSBASE);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::FSGSBASE, onoff);
-            })
-        .def_prop_rw(
-            "OSXMMEXCPT",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::OSXMMEXCPT);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::OSXMMEXCPT, onoff);
-            })
-        .def_prop_rw(
-            "OSFXSR",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::OSFXSR);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::OSFXSR, onoff);
-            })
-        .def_prop_rw(
-            "PCE",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::PCE);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::PCE, onoff);
-            })
-        .def_prop_rw(
-            "PGE",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::PGE);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::PGE, onoff);
-            })
-        .def_prop_rw(
-            "MCE",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::MCE);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::MCE, onoff);
-            })
-        .def_prop_rw(
-            "PAE",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::PAE);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::PAE, onoff);
-            })
-        .def_prop_rw(
-            "PSE",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::PSE);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::PSE, onoff);
-            })
-        .def_prop_rw(
-            "DE",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::DE);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::DE, onoff);
-            })
-        .def_prop_rw(
-            "TSD",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::TSD);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::TSD, onoff);
-            })
-        .def_prop_rw(
-            "PVI",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::PVI);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::PVI, onoff);
-            })
-        .def_prop_rw(
-            "VME",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::VME);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::VME, onoff);
-            })
-        .def_prop_rw(
-            "X",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::X);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::X, onoff);
-            })
-        .def_prop_rw(
-            "LWP",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::LWP);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::LWP, onoff);
-            })
-        .def_prop_rw(
-            "YMM",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::YMM);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::YMM, onoff);
-            })
-        .def_prop_rw(
-            "SSE",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::SSE);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::SSE, onoff);
-            })
-        .def_prop_rw(
-            "x87",
-            [](BochsCPU::Cpu::ControlRegister& cr)
-            {
-                return cr.test((int)BochsCPU::Cpu::ControlRegisterFlag::x87);
-            },
-            [](BochsCPU::Cpu::ControlRegister& cr, bool onoff)
-            {
-                cr.set((int)BochsCPU::Cpu::ControlRegisterFlag::x87, true); // Always be One
-            })
+        // cr0
+        .GetterSetter(PG, "Paging R/W")
+        .GetterSetter(CD, "Cache Disable R/W")
+        .GetterSetter(NW, "Not Writethrough R/W")
+        .GetterSetter(AM, "Alignment Mask R/W")
+        .GetterSetter(WP, "Write Protect R/W")
+        .GetterSetter(NE, "Numeric Error R/W")
+        .GetterSetter(ET, "Extension Type R")
+        .GetterSetter(TS, "Task Switched R/W")
+        .GetterSetter(EM, "Emulation R/W")
+        .GetterSetter(MP, "Monitor Coprocessor R/W")
+        .GetterSetter(PE, "Protection Enabled R/W")
+
+        // cr4
+        .GetterSetter(OSXSAVE, "XSAVE and Processor Extended States Enable Bit R/W")
+        .GetterSetter(FSGSBASE, "Enable RDFSBASE, RDGSBASE, WRFSBASE, and WRGSBASE instructions R/W")
+        .GetterSetter(OSXMMEXCPT, "Operating System Unmasked Exception Support R/W")
+        .GetterSetter(OSFXSR, "Operating System FXSAVE/FXRSTOR Support R/W")
+        .GetterSetter(PCE, "Performance-Monitoring Counter Enable R/W")
+        .GetterSetter(PGE, "Page-Global Enable R/W")
+        .GetterSetter(MCE, "Machine Check Enable R/W")
+        .GetterSetter(PAE, "Physical-Address Extension R/W")
+        .GetterSetter(PSE, "Page Size Extensions R/W")
+        .GetterSetter(DE, "Debugging Extensions R/W")
+        .GetterSetter(TSD, "Time Stamp Disable R/W")
+        .GetterSetter(PVI, "Protected-Mode Virtual Interrupts R/W")
+        .GetterSetter(VME, "Virtual-8086 Mode Extensions R/W")
+
+        // xcr0
+        .GetterSetter(X, "Reserved specifically for XCR0 bit vector expansion. ")
+        .GetterSetter(
+            LWP,
+            "When set, Lightweight Profiling (LWP) extensions are enabled and XSAVE/XRSTOR supports LWP state "
+            "management.")
+        .GetterSetter(
+            YMM,
+            "When set, 256-bit SSE state management is supported by XSAVE/XRSTOR. Must be set to enable AVX "
+            "extensions.")
+        .GetterSetter(
+            SSE,
+            "When set, 128-bit SSE state management is supported by XSAVE/XRSTOR. This bit must be set if YMM is set. "
+            "Must be set to enable AVX extensions.")
+        .GetterSetter(x87, "x87 FPU state management is supported by XSAVE/XRSTOR. Must be set to 1.")
+
         .def(
             "__repr__",
-            [](BochsCPU::Cpu::ControlRegister& cr)
+            [](BochsCPU::Cpu::ControlRegister const& x)
             {
-                return cr.to_string();
+                return x.to_string();
+            })
+        .def(
+            "__str__",
+            [](BochsCPU::Cpu::ControlRegister const& x)
+            {
+                return x.to_string();
             })
         .def(
             "__int__",
-            [](BochsCPU::Cpu::ControlRegister& cr)
+            [](BochsCPU::Cpu::ControlRegister const& x)
             {
-                return cr.to_ullong();
+                return x.to_ullong();
             });
+#undef GetterSetter
+
 #pragma endregion
 
-#pragma region FlagRegistrer
+#pragma region FlagRegister
     nb::enum_<BochsCPU::Cpu::FlagRegisterFlag>(m, "FlagRegisterFlag")
         .value("ID", BochsCPU::Cpu::FlagRegisterFlag::ID, "ID Flag R/W")
         .value("VIP", BochsCPU::Cpu::FlagRegisterFlag::VIP, "Virtual Interrupt Pending R/W")
@@ -410,92 +207,36 @@ bochscpu_cpu_module(nb::module_& base_module)
         .value("CF", BochsCPU::Cpu::FlagRegisterFlag::CF, "Carry Flag R/W")
         .export_values();
 
+#define GetterSetter(name, desc)                                                                                       \
+    GenericGetterSetter(BochsCPU::Cpu::FlagRegister, name, BochsCPU::Cpu::FlagRegisterFlag, desc)
+
+#define GetterSetterStatic(name, desc, val)                                                                            \
+    GenericGetterSetterStatic(BochsCPU::Cpu::FlagRegister, name, BochsCPU::Cpu::FlagRegisterFlag, desc, val)
+
     nb::class_<BochsCPU::Cpu::FlagRegister>(m, "FlagRegister")
         .def(nb::init<>())
-        .def_prop_rw(
-            "ID",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::ID);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::ID, onoff);
-            },
-            "ID Flag R/W")
-        .def_prop_rw(
-            "VIP",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::VIP);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::VIP, onoff);
-            },
-            "Virtual Interrupt Pending R/W")
-        .def_prop_rw(
-            "VIF",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::VIF);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::VIF, onoff);
-            },
-            "Virtual Interrupt Flag R/W")
-        .def_prop_rw(
-            "AC",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::AC);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::AC, onoff);
-            },
-            "Alignment Check R/W")
-        .def_prop_rw(
-            "VM",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::VM);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::VM, onoff);
-            },
-            "Virtual-8086 Mode R/W")
-        .def_prop_rw(
-            "RF",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::RF);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::RF, onoff);
-            },
-            "Resume Flag R/W")
-        .def_prop_ro(
-            "Reserved4",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved4);
-            },
-            "Read as Zero")
-        .def_prop_rw(
-            "NT",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::NT);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::NT, onoff);
-            },
-            "Nested Task R/W")
+        .def(nb::init<uint64_t>())
+        .GetterSetter(ID, "ID Flag R/W")
+        .GetterSetter(VIP, "Virtual Interrupt Pending R/W")
+        .GetterSetter(VIF, "Virtual Interrupt Flag R/W")
+        .GetterSetter(AC, "Alignment Check R/W")
+        .GetterSetter(VM, "Virtual-8086 Mode R/W")
+        .GetterSetter(RF, "Resume Flag R/W")
+        .GetterSetterStatic(Reserved4, "Read as Zero", false)
+        .GetterSetter(NT, "Nested Task R/W")
+        .GetterSetter(OF, "Overflow Flag R/W")
+        .GetterSetter(DF, "Direction Flag R/W")
+        .GetterSetter(IF, "Interrupt Flag R/W")
+        .GetterSetter(TF, "Trap Flag R/W")
+        .GetterSetter(SF, "Sign Flag R/W")
+        .GetterSetter(ZF, "Zero Flag R/W")
+        .GetterSetterStatic(Reserved3, "Read as Zero", false)
+        .GetterSetter(AF, "Auxiliary Flag R/W")
+        .GetterSetterStatic(Reserved2, "Read as Zero", false)
+        .GetterSetter(PF, "Parity Flag R/W")
+        .GetterSetterStatic(Reserved1, "Read as One", true)
+        .GetterSetter(CF, "Carry Flag R/W")
+
         .def_prop_rw(
             "IOPL",
             [](BochsCPU::Cpu::FlagRegister& fr)
@@ -509,132 +250,28 @@ bochscpu_cpu_module(nb::module_& base_module)
                 fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::IOPL1, iopl & 1);
             },
             "IOPL I/O Privilege Level R/W")
-        .def_prop_rw(
-            "OF",
-            [](BochsCPU::Cpu::FlagRegister& fr)
+
+        .def(
+            "__repr__",
+            [](BochsCPU::Cpu::FlagRegister const& x)
             {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::OF);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
+                return x.to_string();
+            })
+        .def(
+            "__str__",
+            [](BochsCPU::Cpu::FlagRegister const& x)
             {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::OF, onoff);
-            },
-            "Overflow Flag R/W")
-        .def_prop_rw(
-            "DF",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::DF);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::DF, onoff);
-            },
-            "Direction Flag R/W")
-        .def_prop_rw(
-            "IF",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::IF);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::IF, onoff);
-            },
-            "Interrupt Flag R/W")
-        .def_prop_rw(
-            "TF",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::TF);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::TF, onoff);
-            },
-            "Trap Flag R/W")
-        .def_prop_rw(
-            "SF",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::SF);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::SF, onoff);
-            },
-            "Sign Flag R/W")
-        .def_prop_rw(
-            "ZF",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::ZF);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::ZF, onoff);
-            },
-            "Zero Flag R/W")
-        .def_prop_ro(
-            "Reserved3",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved3);
-            },
-            "Read as Zero")
-        .def_prop_rw(
-            "AF",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::AF);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::AF, onoff);
-            },
-            "Auxiliary Flag R/W")
-        .def_prop_ro(
-            "Reserved2",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved2);
-            },
-            "Read as Zero")
-        .def_prop_rw(
-            "PF",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::PF);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::PF, onoff);
-            },
-            "Parity Flag R/W")
-        .def_prop_ro(
-            "Reserved1",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved1);
-            },
-            "Read as One")
-        .def_prop_rw(
-            "CF",
-            [](BochsCPU::Cpu::FlagRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FlagRegisterFlag::CF);
-            },
-            [](BochsCPU::Cpu::FlagRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::CF, onoff);
-            },
-            "Carry Flag R/W")
+                return x.to_string();
+            })
         .def(
             "__int__",
-            [](BochsCPU::Cpu::FlagRegister& fr)
+            [](BochsCPU::Cpu::FlagRegister const& x)
             {
-                return fr.to_ullong();
+                return x.to_ullong();
             });
+#undef GetterSetter
+#undef GetterSetterStatic
+
 #pragma endregion
 
 #pragma region FeatureRegister
@@ -650,103 +287,136 @@ bochscpu_cpu_module(nb::module_& base_module)
         .value("SCE", BochsCPU::Cpu::FeatureRegisterFlag::SCE, "System Call Extensions R/W")
         .export_values();
 
+
+#define GetterSetter(name, desc)                                                                                       \
+    GenericGetterSetter(BochsCPU::Cpu::FeatureRegister, name, BochsCPU::Cpu::FeatureRegisterFlag, desc)
+
     nb::class_<BochsCPU::Cpu::FeatureRegister>(m, "FeatureRegister")
         .def(nb::init<>())
-
-        .def_prop_rw(
-            "TCE",
-            [](BochsCPU::Cpu::FeatureRegister& fr)
+        .def(nb::init<uint64_t>())
+        .GetterSetter(TCE, "Translation Cache Extension R/W")
+        .GetterSetter(FFXSR, "Fast FXSAVE/FXRSTOR R/W")
+        .GetterSetter(LMSLE, "Long Mode Segment Limit Enable R/W")
+        .GetterSetter(SVME, "Secure Virtual Machine Enable R/W")
+        .GetterSetter(NXE, "No-Execute Enable R/W")
+        .GetterSetter(LMA, "Long Mode Active R/W")
+        .GetterSetter(LME, "Long Mode Enable R/W")
+        .GetterSetter(SCE, "System Call Extensions R/W")
+        .def(
+            "__repr__",
+            [](BochsCPU::Cpu::FeatureRegister const& x)
             {
-                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::TCE);
-            },
-            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
+                return x.to_string();
+            })
+        .def(
+            "__str__",
+            [](BochsCPU::Cpu::FeatureRegister const& x)
             {
-                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::TCE, onoff);
-            },
-            "Translation Cache Extension R/W")
-        .def_prop_rw(
-            "FFXSR",
-            [](BochsCPU::Cpu::FeatureRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::FFXSR);
-            },
-            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::FFXSR, onoff);
-            },
-            "Fast FXSAVE/FXRSTOR R/W")
-        .def_prop_rw(
-            "LMSLE",
-            [](BochsCPU::Cpu::FeatureRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::LMSLE);
-            },
-            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::LMSLE, onoff);
-            },
-            "Long Mode Segment Limit Enable R/W")
-        .def_prop_rw(
-            "SVME",
-            [](BochsCPU::Cpu::FeatureRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::SVME);
-            },
-            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::SVME, onoff);
-            },
-            "Secure Virtual Machine Enable R/W")
-        .def_prop_rw(
-            "NXE",
-            [](BochsCPU::Cpu::FeatureRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::NXE);
-            },
-            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::NXE, onoff);
-            },
-            "No-Execute Enable R/W")
-        .def_prop_rw(
-            "LMA",
-            [](BochsCPU::Cpu::FeatureRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::LMA);
-            },
-            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::LMA, onoff);
-            },
-            "Long Mode Active R/W")
-        .def_prop_rw(
-            "LME",
-            [](BochsCPU::Cpu::FeatureRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::LME);
-            },
-            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::LME, onoff);
-            },
-            "Long Mode Enable R/W")
-        .def_prop_rw(
-            "SCE",
-            [](BochsCPU::Cpu::FeatureRegister& fr)
-            {
-                return fr.test((int)BochsCPU::Cpu::FeatureRegisterFlag::SCE);
-            },
-            [](BochsCPU::Cpu::FeatureRegister& fr, bool onoff)
-            {
-                fr.set((int)BochsCPU::Cpu::FeatureRegisterFlag::SCE, onoff);
-            },
-            "System Call Extensions R/W")
+                return x.to_string();
+            })
         .def(
             "__int__",
-            [](BochsCPU::Cpu::FeatureRegister& fr)
+            [](BochsCPU::Cpu::FeatureRegister const& x)
             {
-                return fr.to_ullong();
+                return x.to_ullong();
             });
+#undef GetterSetter
+
+#pragma endregion
+
+#pragma region SegmentRegister
+
+    nb::enum_<BochsCPU::Cpu::SegmentRegisterFlag>(m, "SegmentRegisterFlag")
+        .value("RPL0", BochsCPU::Cpu::SegmentRegisterFlag::RPL0, "Low-bit for Requested Privilege Level")
+        .value("RPL1", BochsCPU::Cpu::SegmentRegisterFlag::RPL1, "High-bit for Requested Privilege Level")
+        .export_values();
+
+    nb::enum_<BochsCPU::Cpu::SegmentFlag>(m, "SegmentFlag")
+        .value("A", BochsCPU::Cpu::SegmentFlag::A, "Accessed")
+        .value("R", BochsCPU::Cpu::SegmentFlag::R, "Readable - CS only")
+        .value("W", BochsCPU::Cpu::SegmentFlag::W, "Writable - DS/ES/FS/SS only")
+        .value("C", BochsCPU::Cpu::SegmentFlag::C, "Conforming")
+        .value("D", BochsCPU::Cpu::SegmentFlag::D, "Expand-down (Data)")
+        .value("E", BochsCPU::Cpu::SegmentFlag::E, "Executable - CS only (1) else (0)")
+        .value("S", BochsCPU::Cpu::SegmentFlag::S, "SegmentType - CS/SS only (1)")
+        .value("DPL0", BochsCPU::Cpu::SegmentFlag::DPL0, "Low-bit for Descriptor Privilege Level")
+        .value("DPL1", BochsCPU::Cpu::SegmentFlag::DPL1, "High-bit for Descriptor Privilege Level")
+        .value("P", BochsCPU::Cpu::SegmentFlag::P, "Present")
+        .value("AVL", BochsCPU::Cpu::SegmentFlag::AVL, "Available bit")
+        .value("L", BochsCPU::Cpu::SegmentFlag::L, "Long bit - CS only")
+        .value("DB", BochsCPU::Cpu::SegmentFlag::DB, "(32b) Default-Operand Size (D) Bit - CS only (1)")
+        .value("G", BochsCPU::Cpu::SegmentFlag::G, "Granularity (G) Bit - CS only")
+        .export_values();
+
+#define GetterSetter(name, desc)                                                                                       \
+    GenericGetterSetter(BochsCPU::Cpu::SegmentFlags, name, BochsCPU::Cpu::SegmentFlag, desc)
+
+    nb::class_<BochsCPU::Cpu::SegmentFlags>(m, "SegmentFlags")
+        .def(nb::init<>())
+        .def(nb::init<uint16_t>())
+        .GetterSetter(A, "Accessed bit")
+        .GetterSetter(R, "Readable bit - CS only")
+        .GetterSetter(W, "Writable bit - DS/ES/FS/SS only")
+        .GetterSetter(C, "Conforming bit")
+        .GetterSetter(D, "Expand-down (Data)")
+        .GetterSetter(E, "Executable bit - CS only (1) otherwise (0)")
+        .GetterSetter(S, "SegmentType bit - CS/SS only (1)")
+        .GetterSetter(P, "Present bit")
+        .GetterSetter(AVL, "Available bit")
+        .GetterSetter(L, "Long bit - CS only")
+        .GetterSetter(DB, "(32b) Default-Operand Size (D) Bit - CS only (1)")
+        .GetterSetter(G, "Granularity (G) Bit - CS only")
+
+        .def_prop_rw(
+            "DPL",
+            [](BochsCPU::Cpu::SegmentFlags& x)
+            {
+                return int(x.test((int)BochsCPU::Cpu::SegmentFlag::DPL1)) << 1 |
+                       int(x.test((int)BochsCPU::Cpu::SegmentFlag::DPL0)) << 0;
+            },
+            [](BochsCPU::Cpu::SegmentFlags& x, uint8_t dpl)
+            {
+                x.set((int)BochsCPU::Cpu::SegmentFlag::DPL1, dpl & 2);
+                x.set((int)BochsCPU::Cpu::SegmentFlag::DPL0, dpl & 1);
+            },
+            "IOPL I/O Privilege Level R/W")
+
+        .def(
+            "__repr__",
+            [](BochsCPU::Cpu::SegmentFlags const& x)
+            {
+                return x.to_string();
+            })
+        .def(
+            "__str__",
+            [](BochsCPU::Cpu::SegmentFlags const& x)
+            {
+                std::ostringstream ss;
+                ss << "SegmentFlags(";
+                // clang-format off
+                if ( x.test((int)BochsCPU::Cpu::SegmentFlag::G) )   ss << " G";
+                if ( x.test((int)BochsCPU::Cpu::SegmentFlag::DB) )  ss << " DB";
+                if ( x.test((int)BochsCPU::Cpu::SegmentFlag::AVL) ) ss << " AVL";
+                if ( x.test((int)BochsCPU::Cpu::SegmentFlag::L) )   ss << " L";
+                if ( x.test((int)BochsCPU::Cpu::SegmentFlag::P) )   ss << " P";
+                if ( x.test((int)BochsCPU::Cpu::SegmentFlag::S) )   ss << " S";
+                if ( x.test((int)BochsCPU::Cpu::SegmentFlag::E) )   ss << " E";
+                if ( x.test((int)BochsCPU::Cpu::SegmentFlag::C) )   ss << " C";
+                if ( x.test((int)BochsCPU::Cpu::SegmentFlag::W) )   ss << " W";
+                if ( x.test((int)BochsCPU::Cpu::SegmentFlag::R) )   ss << " R";
+                if ( x.test((int)BochsCPU::Cpu::SegmentFlag::A) )   ss << " A";
+                // clang-format on
+                ss << " )";
+                return ss.str();
+            })
+        .def(
+            "__int__",
+            [](BochsCPU::Cpu::SegmentFlags const& x)
+            {
+                return x.to_ullong();
+            });
+#undef GetterSetter
+
 #pragma endregion
 
     ///
