@@ -39,15 +39,15 @@ def phy_access_cb(sess, cpu_id, a2, a3, a4, a5):
 
 
 def reset_cb(sess, a1, a2):
-    print(f"{a1=:} {a2=:}")
+    logging.debug(f"{a1=:} {a2=:}")
 
 
 def interrupt_cb(sess, a1, a2):
-    print(f"{a1=:} {a2=:}")
+    logging.debug(f"{a1=:} {a2=:}")
 
 
 def hw_interrupt_cb(sess, a1, a2, a3, a4):
-    print(f"{a1=:} {a2=:}")
+    logging.debug(f"{a1=:} {a2=:}")
 
 
 def exception_cb(

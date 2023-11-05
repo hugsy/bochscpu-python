@@ -1,4 +1,8 @@
-import struct
+#
+# Example: Run in bochscpu Fibonacci sequence in long mode
+# Requires: keystone-engine, capstone
+#
+
 import time
 
 import capstone
@@ -29,27 +33,6 @@ stats = Stats()
 def dbg(x: str):
     if DEBUG:
         print(f"[Py] {x}")
-
-
-def dump_page_table(addr: int, level: int = 0):
-    level_str = ("PML", "PDPT", "PD", "PT")
-    if level == 4:
-        data = bytes(bochscpu.memory.phy_read(addr, 8))
-        entry = struct.unpack("<Q", data[:8])[0] & ~0xFFF
-        print(f"{' '*level} {entry:#x}")
-        return
-
-    print(f"Dumping {level_str[level]} @ {addr:#x}")
-
-    for i in range(0, PAGE_SIZE, 8):
-        data = bytes(bochscpu.memory.phy_read(addr + i, 8))
-        entry = struct.unpack("<Q", data[:8])[0]
-        flags = entry & 0xFFF
-        entry = entry & ~0xFFF
-        if entry == 0:
-            continue
-        print(f"{' '*level} #{i//8} - {hex(entry)}|{flags=:#x}")
-        dump_page_table(entry, level + 1)
 
 
 def missing_page_cb(gpa):
@@ -136,10 +119,10 @@ def emulate(code: bytes):
     evaled_gpa = bochscpu.memory.virt_translate(pml4, stack_gva)
     assert evaled_gpa == stack_gpa, f"{evaled_gpa=:#x} != {stack_gpa=:#x}"
 
-    # dump_page_table(pml4)
+    bochscpu.utils.dump_page_table(pml4)
 
     dbg(f"copy code to {shellcode_gva=:#x}")
-    assert bochscpu.memory.virt_write(pml4, shellcode_gva, bytes(code))
+    assert bochscpu.memory.virt_write(pml4, shellcode_gva, bytearray(code))
     dbg(f"copied to {shellcode_gva=:#x}, testing...")
     data = bochscpu.memory.virt_read(pml4, shellcode_gva, len(code))
     assert data

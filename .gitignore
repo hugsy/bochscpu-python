@@ -18,6 +18,8 @@
 *.pyd
 *.pyc
 
+__pycache__
+
 # Fortran module files
 *.mod
 *.smod
