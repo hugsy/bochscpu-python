@@ -67,7 +67,7 @@ def missing_page_cb(pa):
             bochscpu.memory.phy_write(gpa, page)
             logging.debug(f"{gpa=:#x} -> {hva=:#x}")
             hvas.append(hva)
-            # we've successfully
+            # we've successfully mapped it
             return
 
     # otherwise the page is really missing, bail
@@ -207,9 +207,6 @@ def emulate(dmp_path: pathlib.Path):
     ):
         value = int(getattr(dmp.context, regname.capitalize()))
         setattr(state, regname, value)
-
-    state.rsp = 0xFFFFF8065ED7DBC8
-    state.rip = 0xFFFFF806876F25CF
 
     logging.debug(f"Setting the segment selectors")
     _cs = bochscpu.Segment()
