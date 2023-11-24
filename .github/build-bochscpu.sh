@@ -16,6 +16,7 @@ git clone https://github.com/yrp604/bochscpu
 git clone https://github.com/yrp604/bochscpu-ffi
 
 cd bochscpu-build
+export BOCHS_REV=c48a50141b6ade6c6b0744280a598b55d906bb9e
 bash prep.sh || true; cd Bochs/bochs && sh .conf.cpu && make || true
 
 # Remove old files in bochscpu.
