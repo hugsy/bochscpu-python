@@ -20,7 +20,7 @@ bash prep.sh && cd Bochs/bochs && sh .conf.cpu && make || true
 
 # Remove old files in bochscpu.
 rm -rf ../../../bochscpu/bochs
-rm -rf ../../../bochscpu/libs
+rm -rf ../../../bochscpu/lib
 
 # Create the libs directory where we stuff all the libs.
 mkdir ../../../bochscpu/lib
