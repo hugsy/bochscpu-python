@@ -261,12 +261,12 @@ def resolve_function(symbol: str) -> int:
     return address
 
 
-def emulate(dmp):
-    dmp_path = pathlib.Path(dmp)
+def emulate(dmp_path: pathlib.Path):
     logging.info(f"Parsing {dmp_path}")
     dmp = udmp_parser.UserDumpParser()
     assert dmp.Parse(dmp_path)
     logging.info(f"Successfully parsed {dmp_path}")
+    logging.debug(f"{dmp=}")
 
     sess = bochscpu.Session()
     sess.missing_page_handler = missing_page_cb
@@ -324,8 +324,7 @@ def emulate(dmp):
         start, end = region.BaseAddress, region.BaseAddress + region.RegionSize
         content = dmp.ReadMemory(start, end)
         assert content is not None
-        content = bytes(content)
-        bochscpu.memory.virt_write(PML4_ADDRESS, start, bytes(content))
+        bochscpu.memory.virt_write(PML4_ADDRESS, start, bytearray(content))
         del content
 
     logging.debug("Preparing CPU state")
@@ -385,6 +384,6 @@ def emulate(dmp):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.WARNING)
-    arg = sys.argv[1]
+    logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
+    arg = pathlib.Path(sys.argv[1])
     emulate(arg)

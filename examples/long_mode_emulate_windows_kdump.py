@@ -148,6 +148,7 @@ def emulate(dmp_path: pathlib.Path):
     assert dmp
 
     logging.info(f"Successfully parsed {dmp_path}")
+    logging.debug(f"{dmp=}")
 
     session = bochscpu.Session()
     session.missing_page_handler = missing_page_cb
