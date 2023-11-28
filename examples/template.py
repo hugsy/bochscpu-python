@@ -28,22 +28,6 @@ def after_execution_cb(sess: bochscpu.Session, cpu_id: int, _: int):
     logging.debug(f"[CPU#{cpu_id}] after PC={sess.cpu.rip:#x}")
 
 
-def phy_access_cb(sess: bochscpu.Session, cpu_id, a2, a3, a4, a5):
-    logging.debug(f"[CPU#{cpu_id}] {a2=:#x}")
-
-
-def reset_cb(sess: bochscpu.Session, a1, a2):
-    logging.debug(f"{a1=:} {a2=:}")
-
-
-def interrupt_cb(sess: bochscpu.Session, a1, a2):
-    logging.debug(f"{a1=:} {a2=:}")
-
-
-def hw_interrupt_cb(sess: bochscpu.Session, a1, a2, a3, a4):
-    logging.debug(f"{a1=:} {a2=:} {a3=:} {a4=:} ")
-
-
 def exception_cb(
     sess: bochscpu.Session,
     cpu_id: int,
@@ -55,6 +39,103 @@ def exception_cb(
         case _:
             logging.warning(f"cpu#{cpu_id} received exception({v}, {error_code=:d}) ")
     sess.stop()
+
+
+#
+# All the other callback prototypes - see `instrumentation.txt`
+#
+def cache_cntrl_cb(sess: bochscpu.Session, a1: int, a2: int):
+    pass
+
+
+def clflush_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+    pass
+
+
+def cnear_branch_not_taken_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+    pass
+
+
+def cnear_branch_taken_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+    pass
+
+
+def far_branch_cb(
+    sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int, a5: int, a6: int
+):
+    pass
+
+
+def hlt_cb(sess: bochscpu.Session, a1: int):
+    pass
+
+
+def hw_interrupt_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int):
+    pass
+
+
+def inp_cb(sess: bochscpu.Session, a1: int, a2: int):
+    pass
+
+
+def inp2_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+    pass
+
+
+def interrupt_cb(sess: bochscpu.Session, a1: int, a2: int):
+    pass
+
+
+def lin_access_cb(
+    sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int, a5: int, a6: int
+):
+    pass
+
+
+def mwait_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int):
+    pass
+
+
+def opcode_cb(
+    sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int, a5: bool, a6: bool
+):
+    pass
+
+
+def outp_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+    pass
+
+
+def phy_access_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int, a5: int):
+    pass
+
+
+def prefetch_hint_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int):
+    pass
+
+
+def repeat_iteration_cb(sess: bochscpu.Session, a1: int, a2: int):
+    pass
+
+
+def reset_cb(sess: bochscpu.Session, a1: int, a2: int):
+    pass
+
+
+def tlb_cntrl_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+    pass
+
+
+def ucnear_branch_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int):
+    pass
+
+
+def vmexit_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+    pass
+
+
+def wrmsr_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+    pass
 
 
 def run():
@@ -88,25 +169,46 @@ def run():
     sess.cpu.state = state
 
     #
-    # Define one (or several) chains of callbacks and bind them to the session
+    # Defines hook: a hook is one specific set of callbacks. Many hooks can be created, and
+    # they are all chained together when running the code
     #
     hook = bochscpu.Hook()
-    hook.exception = exception_cb
-    hook.before_execution = before_execution_cb
     hook.after_execution = after_execution_cb
-    hook.phy_access = phy_access_cb
-    hook.reset = reset_cb
-    hook.interrupt = interrupt_cb
+    hook.before_execution = before_execution_cb
+    hook.cache_cntrl = cache_cntrl_cb
+    hook.clflush = clflush_cb
+    hook.cnear_branch_not_taken = cnear_branch_not_taken_cb
+    hook.cnear_branch_taken = cnear_branch_taken_cb
+    hook.exception = exception_cb
+    hook.far_branch = far_branch_cb
+    hook.hlt = hlt_cb
     hook.hw_interrupt = hw_interrupt_cb
+    hook.inp = inp_cb
+    hook.interrupt = interrupt_cb
+    hook.lin_access = lin_access_cb
+    hook.mwait = mwait_cb
+    hook.opcode = opcode_cb
+    hook.outp = outp_cb
+    hook.phy_access = phy_access_cb
+    hook.prefetch_hint = prefetch_hint_cb
+    hook.repeat_iteration = repeat_iteration_cb
+    hook.reset = reset_cb
+    hook.tlb_cntrl = tlb_cntrl_cb
+    hook.ucnear_branch = ucnear_branch_cb
+    hook.vmexit = vmexit_cb
+    hook.wrmsr = wrmsr_cb
 
     #
-    # Let it go
+    # Create the hook chain
     #
-    sess.run(
-        [
-            hook,
-        ]
-    )
+    hooks = [
+        hook,  # here we only have one but we can set many
+    ]
+
+    #
+    # Start the emulation
+    #
+    sess.run(hooks)
 
     #
     # With the execution finished, you can read the final state of the CPU
