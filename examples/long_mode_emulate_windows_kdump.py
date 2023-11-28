@@ -1,3 +1,5 @@
+import atexit
+from dataclasses import dataclass
 from typing import Optional
 
 import ctypes
@@ -5,6 +7,7 @@ import logging
 import os
 import pathlib
 import sys
+import time
 
 import capstone
 import kdmp_parser
@@ -15,20 +18,47 @@ import bochscpu.memory
 import bochscpu.utils
 
 
-kernel32 = ctypes.windll.kernel32
-kernel32.GetModuleHandleW.argtypes = [ctypes.c_wchar_p]
-kernel32.GetModuleHandleW.restype = ctypes.c_void_p
-kernel32.GetProcAddress.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
-kernel32.GetProcAddress.restype = ctypes.c_void_p
-
-
 cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+
+
+def disass(state, va: int) -> capstone.CsInsn:
+    global cs
+    raw = bytes(bochscpu.memory.virt_read(state.cr3, va, 16))
+    insn = next(cs.disasm(raw, va))
+    return insn
+
 
 emulation_end_address = 0
 
 hvas: list[int] = []
 dmp: Optional[kdmp_parser.KernelDumpParser] = None
 session: Optional[bochscpu.Session] = None
+
+
+@dataclass
+class SessionPerf:
+    start_time_ns: int = 0
+    end_time_ns: int = 0
+    executed_instruction: int = 0
+    allocated_pages: int = 0
+
+    @property
+    def execution_time_ns(self) -> int:
+        return self.end_time_ns - self.start_time_ns
+
+    @property
+    def execution_time(self) -> float:
+        return self.execution_time_ns / 1_000_000_000
+
+    @property
+    def average(self) -> float:
+        if not self.execution_time:
+            return 0
+
+        return self.executed_instruction / self.execution_time
+
+
+perf = SessionPerf()
 
 
 def hexdump(
@@ -52,10 +82,10 @@ def hexdump(
 
 
 def missing_page_cb(pa):
-    global session, dmp, hvas
+    global session, dmp, hvas, perf
     assert dmp and session
 
-    gpa = kdmp_parser.page.align(pa)
+    gpa = bochscpu.memory.align_address_to_page(pa)
     logging.debug(f"Missing GPA={gpa:#x}")
 
     if gpa in dmp.pages:
@@ -63,6 +93,7 @@ def missing_page_cb(pa):
         hva = bochscpu.memory.allocate_host_page()
         page = dmp.read_physical_page(gpa)
         if hva and page:
+            perf.allocated_pages += 1
             bochscpu.memory.page_insert(gpa, hva)
             bochscpu.memory.phy_write(gpa, page)
             logging.debug(f"{gpa=:#x} -> {hva=:#x}")
@@ -75,39 +106,56 @@ def missing_page_cb(pa):
     raise Exception
 
 
-def phy_access_cb(
-    sess: bochscpu.Session, cpu_id: int, lin: int, phy: int, len: int, rw: int
-):
-    logging.debug(f"{lin=:#x} -> {phy=:#x}, {len=:#x}, {bool(rw)=}")
-
-
 def exception_cb(
     sess: bochscpu.Session,
     cpu_id: int,
     vector: int,
     error_code: int,
 ):
-    excpt = bochscpu.cpu.ExceptionType(vector)
-    match excpt:
+    exception = bochscpu.cpu.ExceptionType(vector)
+    match exception:
         case bochscpu.cpu.ExceptionType.BreakPoint:
-            logging.info("breakpoint hit")
+            logging.info("[CPU#{cpu_id}] breakpoint hit")
 
         case bochscpu.cpu.ExceptionType.PageFault:
+            state = sess.cpu.state
+
+            # see Intel 3A - 4.7
+            reason = ""
+            if error_code & (1 << 15):
+                reason = "SGX related"
+            else:
+                reason += (
+                    "page-level protection violation"
+                    if error_code & 1
+                    else "non-present page"
+                )
+                reason += ", write access" if error_code & (1 << 1) else ", read access"
+                reason += (
+                    ", user mode" if error_code & (1 << 2) else ", supervisor mode"
+                )
+                reason += (
+                    ", instruction fetch"
+                    if error_code & (1 << 4)
+                    else ", not an instruction fetch"
+                )
+
             logging.warning(
-                f"pagefault on VA={sess.cpu.cr2:#016x} at IP={sess.cpu.rip:#016x}"
+                f"[CPU#{cpu_id}] pagefault on VA={state.cr2:#016x} at IP={state.rip:#016x}: {reason=}"
             )
 
         case _:
             logging.error(
-                f"cpu#{cpu_id} received exception({excpt=}, {error_code=:d}) "
+                f"[CPU#{cpu_id}] received exception({exception=}, {error_code=:#x}) "
             )
     sess.stop()
 
 
 def before_execution_cb(sess: bochscpu.Session, cpu_id: int, _: int):
+    global perf
+    perf.executed_instruction += 1
     state = sess.cpu.state
-    raw = bytes(bochscpu.memory.virt_read(state.cr3, state.rip, 16))
-    insn = next(cs.disasm(raw, state.rip))
+    insn = disass(state, state.rip)
     logging.debug(
         f"[CPU#{cpu_id}] PC={state.rip:#x} {insn.bytes.hex()} - {insn.mnemonic} {insn.op_str}"
     )
@@ -115,17 +163,24 @@ def before_execution_cb(sess: bochscpu.Session, cpu_id: int, _: int):
 
 def after_execution_cb(sess: bochscpu.Session, cpu_id: int, _: int):
     global emulation_end_address
+
     if not emulation_end_address:
         return
 
     if emulation_end_address == sess.cpu.state.rip:
         logging.info(
-            f"Reaching end address @ {emulation_end_address}, ending emulation"
+            f"[CPU#{cpu_id}] Reaching end address @ {emulation_end_address}, ending emulation"
         )
         sess.stop()
 
 
 def resolve_function(symbol: str) -> int:
+    kernel32 = ctypes.windll.kernel32
+    kernel32.GetModuleHandleW.argtypes = [ctypes.c_wchar_p]
+    kernel32.GetModuleHandleW.restype = ctypes.c_void_p
+    kernel32.GetProcAddress.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+    kernel32.GetProcAddress.restype = ctypes.c_void_p
+
     dll, func = symbol.split("!", 1)
     if not dll.lower().endswith(".dll"):
         dll += ".dll"
@@ -244,7 +299,7 @@ def emulate(dmp_path: pathlib.Path):
     _fs.present = True
     _fs.attr = 0x4F3
     _gs = bochscpu.Segment()
-    _gs.base = 0  # TODO: missing curprocess TEB
+    _gs.base = 0
     _gs.limit = 0xFFFF_FFFF
     _gs.selector = dmp.context.SegGs
     _gs.present = True
@@ -256,6 +311,29 @@ def emulate(dmp_path: pathlib.Path):
     state.es = _es
     state.fs = _fs
     state.gs = _gs
+
+    _idtr = bochscpu.GlobalSegment()
+    _idtr.base = 0xFFFFF8065ED68000
+    _idtr.limit = 0x0FFF
+    state.idtr = _idtr
+
+    _gdtr = bochscpu.GlobalSegment()
+    _gdtr.base = 0xFFFFF8065ED6AFB0
+    _gdtr.limit = 0x57
+    state.gdtr = _gdtr
+
+    _tr = bochscpu.Segment()
+    _tr.base = 0x00000005ED69000
+    _tr.limit = 0x67
+    _tr.selector = 0x40
+    _tr.attr = 0x8B
+
+    # TODO missing kernel_gs_base
+    # TODO missing gdtr/ldtr/idtr/tr
+    # TODO missing simd/fpu
+
+    # RIP should be at an int3 instruction, so patch it so we can resume execution
+    state.rip += 1
 
     logging.debug(f"Apply the created state to the session CPU")
     session.cpu.state = state
@@ -270,6 +348,8 @@ def emulate(dmp_path: pathlib.Path):
     bochscpu.utils.dump_registers(session.cpu.state)
 
     logging.debug("Let's go baby!")
+
+    perf.start_time_ns = int(time.time_ns())
     session.run(
         [
             hook,
@@ -277,9 +357,19 @@ def emulate(dmp_path: pathlib.Path):
     )
 
     session.stop()
+    perf.end_time_ns = int(time.time_ns())
 
     logging.debug("Final register state")
     bochscpu.utils.dump_registers(session.cpu.state)
+
+    logging.debug(f"{perf=}")
+    logging.info(f"{perf.average=} insn/s")
+
+
+def clean():
+    logging.debug("Cleanup")
+    for hva in hvas:
+        bochscpu.memory.release_host_page(hva)
 
 
 if __name__ == "__main__":
@@ -287,7 +377,4 @@ if __name__ == "__main__":
     arg = pathlib.Path(sys.argv[1]).resolve()
     assert arg.exists()
     emulate(arg)
-
-    logging.debug("Cleanup")
-    for hva in hvas:
-        bochscpu.memory.release_host_page(hva)
+    atexit.register(clean)
