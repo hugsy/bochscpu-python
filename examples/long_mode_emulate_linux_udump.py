@@ -28,7 +28,7 @@ PAGE_NOACCESS = 0x01
 
 class Permission(enum.IntEnum):
     CODE = 0
-    RW = 1
+    DATA = 1
 
 
 cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
@@ -134,7 +134,7 @@ def convert_region_protection(flags: lief.ELF.SEGMENT_FLAGS) -> int:
     if flags_i & 1:
         return Permission.CODE
     if flags_i & 4:
-        return Permission.RW
+        return Permission.DATA
 
     logging.warning(f"Unknown {flags.value=:#x})")
     return -1
@@ -300,8 +300,7 @@ def emulate(dmp_path: str):
         )
         for va in range(start, end, PAGE_SIZE):
             flags = convert_region_protection(segment.flags)
-            if flags < 0:
-                continue
+            assert flags > 0
             pt.insert(va, pa, flags)
             assert pt.translate(va) == pa
             hva = bochscpu.memory.allocate_host_page()
@@ -315,20 +314,20 @@ def emulate(dmp_path: str):
     buffer_hva = bochscpu.memory.allocate_host_page()
     buffer_pa = 0x4100_0000
     buffer_va = 0x41_0000_0000
-    pt.insert(buffer_va, buffer_pa, Permission.RW)
+    pt.insert(buffer_va, buffer_pa, Permission.DATA)
     bochscpu.memory.page_insert(buffer_pa, buffer_hva)
 
     stack_hva = bochscpu.memory.allocate_host_page()
     stack_pa = 0x4200_0000
     stack_va = 0x42_0000_0000
-    pt.insert(stack_va, stack_pa, Permission.RW)
+    pt.insert(stack_va, stack_pa, Permission.DATA)
     bochscpu.memory.page_insert(stack_pa, stack_hva)
 
     # Create a mock TLS and map it at VA 0 so we don't have to bother with FS
     fake_tls_hva = bochscpu.memory.allocate_host_page()
     fake_tls_pa = 0x4300_0000
     fake_tls_va = 0x0000_0000
-    pt.insert(fake_tls_va, fake_tls_pa, Permission.RW)
+    pt.insert(fake_tls_va, fake_tls_pa, Permission.DATA)
     bochscpu.memory.page_insert(fake_tls_pa, fake_tls_hva)
 
     logging.debug(f"Committing {pgnb} pages")
