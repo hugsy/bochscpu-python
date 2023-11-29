@@ -419,6 +419,7 @@ bochscpu_cpu_module(nb::module_& base_module)
 
 #pragma endregion
 
+#pragma region CPU Exceptions
     ///
     /// @brief AMD Manual Vol 2 - 8.1
     ///
@@ -442,15 +443,11 @@ bochscpu_cpu_module(nb::module_& base_module)
         .value("MachineCheck", BochsCPU::BochsException::BX_MC_EXCEPTION)
         .value("ControlProtection", BochsCPU::BochsException::BX_CP_EXCEPTION)
         .export_values();
+#pragma endregion
 
+#pragma region CPU class
     nb::class_<BochsCPU::Cpu::CPU>(m, "Cpu")
         .def_ro("id", &BochsCPU::Cpu::CPU::id)
-
-        // .def("cpu_new", &bochscpu_cpu_new, "id"_a, "Create a new CPU")
-        // .def("cpu_from", &bochscpu_cpu_from, "id"_a, "Get a CPU context from a given CPU ID")
-        // .def("cpu_forget", &bochscpu_cpu_forget, "cpu"_a)
-        // .def("cpu_delete", &bochscpu_cpu_delete, "cpu"_a)
-
         .def(
             "set_mode",
             [](BochsCPU::Cpu::CPU& c)
@@ -824,4 +821,6 @@ bochscpu_cpu_module(nb::module_& base_module)
             {
                 ::bochscpu_cpu_set_zmm(c.__cpu, idx, &z);
             });
+
+#pragma endregion
 }
