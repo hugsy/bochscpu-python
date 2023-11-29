@@ -138,7 +138,7 @@ def wrmsr_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
     pass
 
 
-def run():
+def emulate():
     #
     # Allocate a page on host, expose it to bochs, and fill it up
     #
@@ -164,6 +164,7 @@ def run():
     #
     state = bochscpu.State()
     bochscpu.cpu.set_real_mode(state)
+
     state.rip = code_gpa
     state.rsp = code_gpa + 0x0800
     sess.cpu.state = state
@@ -220,4 +221,8 @@ def run():
 
 if __name__ == "__main__":
     logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
-    run()
+    emulate()
+    # Note: it is recommended to use an intermediary function like `emulate`
+    # rather than emulating directly from `main`. Finishing main will result
+    # in a process exit, prevent some object to be correctly cleaned which
+    # may resulting in `nanobind` throwing exception on object deletions.
