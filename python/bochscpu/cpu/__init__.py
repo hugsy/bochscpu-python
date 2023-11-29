@@ -115,3 +115,68 @@ def set_protected_mode(state: State):
     state.efer = int(efer)
     state.rflags = int(rflags)
     return
+
+
+def is_real_mode(state: State) -> bool:
+    """Indicates whether the given will run the CPU in real/legacy mode
+
+    Args:
+        state (State): the CPU state
+
+    Returns:
+        bool: True if the CPU will run in real/legacy mode
+    """
+    cs = SegmentFlags(state.cs.attr)
+    cr0 = ControlRegister(state.cr0)
+    cr4 = ControlRegister(state.cr4)
+    return not cs.L and not cr0.PAE and not cr4.PG and not cr4.PGE
+
+
+def is_protected_mode(state: State) -> bool:
+    """Indicates whether the given will run the CPU in protected mode
+
+    Args:
+        state (State): the CPU state
+
+    Returns:
+        bool: True if the CPU will run in protected mode
+    """
+    cr0 = ControlRegister(state.cr0)
+    cr4 = ControlRegister(state.cr4)
+    efer = FeatureRegister(state.efer)
+    cs = SegmentFlags(state.cs.attr)
+    rflags = FlagRegister(state.rflags)
+    return cr0.PE and not efer.LME and not cr4.PAE and not cs.L and not rflags.VM
+
+
+def is_virtual8086_mode(state: State) -> bool:
+    """Indicates whether the given will run the CPU in Virtual8086 mode
+
+    Args:
+        state (State): the CPU state
+
+    Returns:
+        bool: True if the CPU will run in Virtual8086 mode
+    """
+    cr0 = ControlRegister(state.cr0)
+    cr4 = ControlRegister(state.cr4)
+    efer = FeatureRegister(state.efer)
+    cs = SegmentFlags(state.cs.attr)
+    rflags = FlagRegister(state.rflags)
+    return cr0.PE and not efer.LME and not cr4.PAE and not cs.L and rflags.VM
+
+
+def is_long_mode(state: State) -> bool:
+    """Indicates whether the given will run the CPU in long mode
+
+    Args:
+        state (State): the CPU state
+
+    Returns:
+        bool: True if the CPU will run in long mode
+    """
+    cr0 = ControlRegister(state.cr0)
+    cr4 = ControlRegister(state.cr4)
+    efer = FeatureRegister(state.efer)
+    cs = SegmentFlags(state.cs.attr)
+    return efer.LME and cr4.PAE and cr0.PE and cs.L
