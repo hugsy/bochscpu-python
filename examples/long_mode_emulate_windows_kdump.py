@@ -345,7 +345,7 @@ def emulate(dmp_path: pathlib.Path):
     hook.after_execution = after_execution_cb
 
     logging.debug("Initial register state")
-    bochscpu.utils.dump_registers(session.cpu.state)
+    bochscpu.utils.dump_registers(session.cpu.state, True)
 
     logging.debug("Let's go baby!")
 
@@ -360,7 +360,7 @@ def emulate(dmp_path: pathlib.Path):
     perf.end_time_ns = int(time.time_ns())
 
     logging.debug("Final register state")
-    bochscpu.utils.dump_registers(session.cpu.state)
+    bochscpu.utils.dump_registers(session.cpu.state, True)
 
     logging.debug(f"{perf=}")
     logging.info(f"{perf.average=} insn/s")
