@@ -287,7 +287,6 @@ bochscpu_cpu_module(nb::module_& base_module)
                 ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::AC) ? "AC " : "ac ");
                 ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::VM) ? "VM " : "vm ");
                 ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::RF) ? "RF " : "rf ");
-                // ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved4) ? "Reserved4 " : "reserved4 ");
                 ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::NT) ? "NT " : "nt ");
                 ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::OF) ? "OF " : "of ");
                 ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::DF) ? "DF " : "df ");
@@ -295,11 +294,8 @@ bochscpu_cpu_module(nb::module_& base_module)
                 ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::TF) ? "TF " : "tf ");
                 ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::SF) ? "SF " : "sf ");
                 ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::ZF) ? "ZF " : "zf ");
-                // ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved3) ? "Reserved3 " : "reserved3 ");
                 ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::AF) ? "AF " : "af ");
-                // ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved2) ? "Reserved2 " : "reserved2 ");
                 ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::PF) ? "PF " : "pf ");
-                // ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved1) ? "Reserved1 " : "reserved1 ");
                 ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::CF) ? "CF " : "cf ");
                 ss << " ]";
                 return ss.str();
