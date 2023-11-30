@@ -65,9 +65,9 @@ def dump_registers(state: _bochscpu.State, include_kernel: bool = False):
 
     print(
         f"""
-efl={state.rflags:08x}
+efl={state.rflags:08x} {str(bochscpu.cpu.FlagRegister(state.rflags))}
 cs={int(state.cs):04x}  ss={int(state.ss):04x}  ds={int(state.ds):04x}  es={int(state.es):04x}  fs={int(state.fs):04x}  gs={int(state.gs):04x}
-"""
+    """
     )
 
     if not include_kernel:
