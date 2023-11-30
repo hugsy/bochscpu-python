@@ -46,6 +46,7 @@ bochscpu_cpu_module(nb::module_& base_module)
 
 #pragma region ControlRegister
     nb::enum_<BochsCPU::Cpu::ControlRegisterFlag>(m, "ControlRegisterFlag")
+        // clang-format off
         // cr0
         .value("PG", BochsCPU::Cpu::ControlRegisterFlag::PG, "Paging R/W")
         .value("CD", BochsCPU::Cpu::ControlRegisterFlag::CD, "Cache Disable R/W")
@@ -60,18 +61,9 @@ bochscpu_cpu_module(nb::module_& base_module)
         .value("PE", BochsCPU::Cpu::ControlRegisterFlag::PE, "Protection Enabled R/W")
 
         // cr4
-        .value(
-            "OSXSAVE",
-            BochsCPU::Cpu::ControlRegisterFlag::OSXSAVE,
-            "XSAVE and Processor Extended States Enable Bit R/W")
-        .value(
-            "FSGSBASE",
-            BochsCPU::Cpu::ControlRegisterFlag::FSGSBASE,
-            "Enable RDFSBASE, RDGSBASE, WRFSBASE, and WRGSBASE instructions R/W")
-        .value(
-            "OSXMMEXCPT",
-            BochsCPU::Cpu::ControlRegisterFlag::OSXMMEXCPT,
-            "Operating System Unmasked Exception Support R/W")
+        .value("OSXSAVE", BochsCPU::Cpu::ControlRegisterFlag::OSXSAVE, "XSAVE and Processor Extended States Enable Bit R/W")
+        .value("FSGSBASE", BochsCPU::Cpu::ControlRegisterFlag::FSGSBASE, "Enable RDFSBASE, RDGSBASE, WRFSBASE, and WRGSBASE instructions R/W")
+        .value("OSXMMEXCPT",BochsCPU::Cpu::ControlRegisterFlag::OSXMMEXCPT,"Operating System Unmasked Exception Support R/W")
         .value("OSFXSR", BochsCPU::Cpu::ControlRegisterFlag::OSFXSR, "Operating System FXSAVE/FXRSTOR Support R/W")
         .value("PCE", BochsCPU::Cpu::ControlRegisterFlag::PCE, "Performance-Monitoring Counter Enable R/W")
         .value("PGE", BochsCPU::Cpu::ControlRegisterFlag::PGE, "Page-Global Enable R/W")
@@ -85,26 +77,11 @@ bochscpu_cpu_module(nb::module_& base_module)
 
         // xcr0
         .value("X", BochsCPU::Cpu::ControlRegisterFlag::X, "Reserved specifically for XCR0 bit vector expansion. ")
-        .value(
-            "LWP",
-            BochsCPU::Cpu::ControlRegisterFlag::LWP,
-            "When set, Lightweight Profiling (LWP) extensions are enabled and XSAVE/XRSTOR supports LWP state "
-            "management.")
-        .value(
-            "YMM",
-            BochsCPU::Cpu::ControlRegisterFlag::YMM,
-            "When set, 256-bit SSE state management is supported by XSAVE/XRSTOR. Must be set to enable AVX "
-            "extensions.")
-        .value(
-            "SSE",
-            BochsCPU::Cpu::ControlRegisterFlag::SSE,
-            "When set, 128-bit SSE state management is supported by XSAVE/XRSTOR. This bit must be set if YMM is set. "
-            "Must be set to enable AVX extensions.")
-        .value(
-            "x87",
-            BochsCPU::Cpu::ControlRegisterFlag::x87,
-            "x87 FPU state management is supported by XSAVE/XRSTOR. Must be set to 1.")
-
+        .value("LWP", BochsCPU::Cpu::ControlRegisterFlag::LWP, "When set, Lightweight Profiling (LWP) extensions are enabled and XSAVE/XRSTOR supports LWP state management.")
+        .value("YMM", BochsCPU::Cpu::ControlRegisterFlag::YMM,"When set, 256-bit SSE state management is supported by XSAVE/XRSTOR. Must be set to enable AVX extensions.")
+        .value("SSE",BochsCPU::Cpu::ControlRegisterFlag::SSE,"When set, 128-bit SSE state management is supported by XSAVE/XRSTOR. This bit must be set if YMM is set. Must be set to enable AVX extensions.")
+        .value("x87", BochsCPU::Cpu::ControlRegisterFlag::x87,"x87 FPU state management is supported by XSAVE/XRSTOR. Must be set to 1.")
+        // clang-format on
         .export_values();
 
 
@@ -170,6 +147,48 @@ bochscpu_cpu_module(nb::module_& base_module)
             [](BochsCPU::Cpu::ControlRegister const& x)
             {
                 return x.to_string();
+            })
+        .def(
+            "cr0_str",
+            [](BochsCPU::Cpu::ControlRegister const& x)
+            {
+                std::stringstream ss;
+                ss << "[ ";
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::PG) ? "PG " : "pg ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::CD) ? "CD " : "cd ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::NW) ? "NW " : "nw ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::AM) ? "AM " : "am ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::WP) ? "WP " : "wp ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::NE) ? "NE " : "ne ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::ET) ? "ET " : "et ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::TS) ? "TS " : "ts ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::EM) ? "EM " : "em ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::MP) ? "MP " : "mp ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::PE) ? "PE " : "pe ");
+                ss << "]";
+                return ss.str();
+            })
+        .def(
+            "cr4_str",
+            [](BochsCPU::Cpu::ControlRegister const& x)
+            {
+                std::stringstream ss;
+                ss << "[ ";
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::OSXSAVE) ? "OSXSAVE " : "osxsave ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::FSGSBASE) ? "FSGSBASE " : "fsgsbase ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::OSXMMEXCPT) ? "OSXMMEXCPT " : "osxmmexcpt ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::OSFXSR) ? "OSFXSR " : "osfxsr ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::PCE) ? "PCE " : "pce ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::PGE) ? "PGE " : "pge ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::MCE) ? "MCE " : "mce ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::PAE) ? "PAE " : "pae ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::PSE) ? "PSE " : "pse ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::DE) ? "DE " : "de ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::TSD) ? "TSD " : "tsd ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::PVI) ? "PVI " : "pvi ");
+                ss << (x.test((int)BochsCPU::Cpu::ControlRegisterFlag::VME) ? "VME " : "vme ");
+                ss << "]";
+                return ss.str();
             })
         .def(
             "__int__",
@@ -250,7 +269,6 @@ bochscpu_cpu_module(nb::module_& base_module)
                 fr.set((int)BochsCPU::Cpu::FlagRegisterFlag::IOPL1, iopl & 1);
             },
             "IOPL I/O Privilege Level R/W")
-
         .def(
             "__repr__",
             [](BochsCPU::Cpu::FlagRegister const& x)
@@ -261,7 +279,30 @@ bochscpu_cpu_module(nb::module_& base_module)
             "__str__",
             [](BochsCPU::Cpu::FlagRegister const& x)
             {
-                return x.to_string();
+                std::stringstream ss;
+                ss << "[ ";
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::ID) ? "ID " : "id ");
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::VIP) ? "VIP " : "vip ");
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::VIF) ? "VIF " : "vif ");
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::AC) ? "AC " : "ac ");
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::VM) ? "VM " : "vm ");
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::RF) ? "RF " : "rf ");
+                // ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved4) ? "Reserved4 " : "reserved4 ");
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::NT) ? "NT " : "nt ");
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::OF) ? "OF " : "of ");
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::DF) ? "DF " : "df ");
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::IF) ? "IF " : "if ");
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::TF) ? "TF " : "tf ");
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::SF) ? "SF " : "sf ");
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::ZF) ? "ZF " : "zf ");
+                // ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved3) ? "Reserved3 " : "reserved3 ");
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::AF) ? "AF " : "af ");
+                // ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved2) ? "Reserved2 " : "reserved2 ");
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::PF) ? "PF " : "pf ");
+                // ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::Reserved1) ? "Reserved1 " : "reserved1 ");
+                ss << (x.test((int)BochsCPU::Cpu::FlagRegisterFlag::CF) ? "CF " : "cf ");
+                ss << " ]";
+                return ss.str();
             })
         .def(
             "__int__",
@@ -312,7 +353,18 @@ bochscpu_cpu_module(nb::module_& base_module)
             "__str__",
             [](BochsCPU::Cpu::FeatureRegister const& x)
             {
-                return x.to_string();
+                std::stringstream ss;
+                ss << "[ ";
+                ss << (x.test((int)BochsCPU::Cpu::FeatureRegisterFlag::TCE) ? "TCE " : "tce ");
+                ss << (x.test((int)BochsCPU::Cpu::FeatureRegisterFlag::FFXSR) ? "FFXSR " : "ffxsr ");
+                ss << (x.test((int)BochsCPU::Cpu::FeatureRegisterFlag::LMSLE) ? "LMSLE " : "lmsle ");
+                ss << (x.test((int)BochsCPU::Cpu::FeatureRegisterFlag::SVME) ? "SVME " : "svme ");
+                ss << (x.test((int)BochsCPU::Cpu::FeatureRegisterFlag::NXE) ? "NXE " : "nxe ");
+                ss << (x.test((int)BochsCPU::Cpu::FeatureRegisterFlag::LMA) ? "LMA " : "lma ");
+                ss << (x.test((int)BochsCPU::Cpu::FeatureRegisterFlag::LME) ? "LME " : "lme ");
+                ss << (x.test((int)BochsCPU::Cpu::FeatureRegisterFlag::SCE) ? "SCE " : "sce ");
+                ss << " ]";
+                return ss.str();
             })
         .def(
             "__int__",
