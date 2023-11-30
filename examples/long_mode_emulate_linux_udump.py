@@ -300,7 +300,8 @@ def emulate(dmp_path: str):
         )
         for va in range(start, end, PAGE_SIZE):
             flags = convert_region_protection(segment.flags)
-            assert flags > 0
+            if flags < 0:
+                continue
             pt.insert(va, pa, flags)
             assert pt.translate(va) == pa
             hva = bochscpu.memory.allocate_host_page()
