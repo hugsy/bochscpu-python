@@ -345,7 +345,7 @@ class ControlRegister:
 
 class ControlRegisterFlag(Flag):
     """
-    <attribute '__doc__' of 'ControlRegisterFlag' objects>
+    x86 ControlRegisterFlag class
     """
 
     PG: ControlRegisterFlag
