@@ -8,7 +8,7 @@
 
 #if defined(_WIN32)
 #include <windows.h>
-#elif defined(linux) || defined(__linux)
+#elif defined(__LINUX__)
 #include <sys/mman.h>
 #elif defined(__APPLE__)
 #include <sys/mman.h>
@@ -31,7 +31,7 @@
 #define info(fmt, ...) ::printf("[+] " fmt "\n", __VA_ARGS__)
 #define warn(fmt, ...) ::printf("[!] " fmt "\n", __VA_ARGS__)
 #define err(fmt, ...) ::printf("[-] " fmt "\n", __VA_ARGS__)
-#elif defined(linux) || defined(__linux)
+#elif defined(__LINUX__) || defined(__APPLE__)
 #define info(fmt, ...) ::printf("[+] " fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
 #define warn(fmt, ...) ::printf("[!] " fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
 #define err(fmt, ...) ::printf("[-] " fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
