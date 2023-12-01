@@ -33,6 +33,10 @@ else()
     target_link_libraries(_bochscpu PRIVATE bochscpu_ffi)
 endif()
 
+if(APPLE)
+    target_link_libraries(_bochscpu PRIVATE "-framework CoreFoundation" -Wl -lm)
+endif()
+
 install(DIRECTORY bochscpu DESTINATION .)
 install(TARGETS _bochscpu LIBRARY DESTINATION bochscpu)
 
