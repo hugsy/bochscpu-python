@@ -16,7 +16,7 @@ jobs:
         variant:
           - {os: windows-latest, arch: x64}
           - {os: ubuntu-latest, arch: x64}
-        #   - {os: macos-latest, arch: x64} # doesn't build, but low prio
+          - {os: macos-latest, arch: x64}
     runs-on: ${{ matrix.variant.os }}
     name: ${{ matrix.variant.os }} / ${{ matrix.variant.arch }}
     steps:
@@ -73,7 +73,7 @@ jobs:
         #   - {os: windows-latest, generator: msvc, arch: arm64, config: RelWithDebInfo, py-arch: x64} # Unsupported (see https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json)
           - {os: ubuntu-latest, generator: gcc, arch: x64, config: RelWithDebInfo, py-arch: x64}
         #   - {os: ubuntu-latest, generator: gcc, arch: x64, config: Debug, py-arch: x64}
-        #   - {os: macos-latest, generator: clang, arch: x64, config: Release, py-arch: x64}
+          - {os: macos-latest, generator: clang, arch: x64, config: Release, py-arch: x64}
         #   - {os: macos-latest, generator: clang, arch: x64, config: Debug, py-arch: x64}
     runs-on: ${{ matrix.variant.os }}
     name: ${{ matrix.variant.os }} / ${{ matrix.python-version }} / ${{ matrix.variant.config }}
@@ -137,6 +137,8 @@ jobs:
       if: matrix.variant.os == 'macos-latest'
       run: |
         echo NB_CPU=$(sysctl -n hw.ncpu) >> $GITHUB_ENV
+        echo CC=clang >> $GITHUB_ENV
+        echo CXX=clang++ >> $GITHUB_ENV
 
     - name: Build PYD and WHL
       run: |
