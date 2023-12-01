@@ -16,9 +16,9 @@ jobs:
         variant:
           - {os: windows-latest, arch: x64}
           - {os: ubuntu-latest, arch: x64}
-        #   - {os: macos-latest, arch: x64} # doesn't build, but low prio
+          - {os: macos-latest, arch: x64}
     runs-on: ${{ matrix.variant.os }}
-    name: ${{ matrix.variant.os }} / ${{ matrix.variant.arch }}
+    name: bochscpu / ${{ matrix.variant.os }} / ${{ matrix.variant.arch }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -46,7 +46,7 @@ jobs:
         cp -Verbose bxbuild/bochscpu-ffi/target/debug/*.lib artifact/relwithdebinfo/
 
     - name: Build BochsCPU (Linux & MacOS)
-      if: steps.cache-artifacts.outputs.cache-hit != 'true' && (matrix.variant.os == 'macos-latest' || matrix.variant.os == 'ubuntu-latest')
+      if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os != 'windows-latest'
       run: |
         chmod +x .github/build-bochscpu.sh; .github/build-bochscpu.sh
         mkdir artifact artifact/Release artifact/Debug artifact/RelWithDebInfo
@@ -60,7 +60,6 @@ jobs:
         name: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}
         path: artifact
 
-
   bindings:
     needs: bochscpu
     strategy:
@@ -68,15 +67,12 @@ jobs:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11']
         variant:
-          - {os: windows-latest, generator: msvc, arch: x64, config: RelWithDebInfo, py-arch: x64}
-        #   - {os: windows-latest, generator: msvc, arch: x64, config: Debug, py-arch: x64}
-        #   - {os: windows-latest, generator: msvc, arch: arm64, config: RelWithDebInfo, py-arch: x64} # Unsupported (see https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json)
-          - {os: ubuntu-latest, generator: gcc, arch: x64, config: RelWithDebInfo, py-arch: x64}
-        #   - {os: ubuntu-latest, generator: gcc, arch: x64, config: Debug, py-arch: x64}
-        #   - {os: macos-latest, generator: clang, arch: x64, config: Release, py-arch: x64}
-        #   - {os: macos-latest, generator: clang, arch: x64, config: Debug, py-arch: x64}
+          - {os: windows-latest, arch: x64, config: RelWithDebInfo, py-arch: x64}
+        #   - {os: windows-latest, arch: arm64, config: RelWithDebInfo, py-arch: x64} # Unsupported (see https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json)
+          - {os: ubuntu-latest, arch: x64, config: RelWithDebInfo, py-arch: x64}
+          - {os: macos-latest, arch: x64, config: Release, py-arch: x64}
     runs-on: ${{ matrix.variant.os }}
-    name: ${{ matrix.variant.os }} / ${{ matrix.python-version }} / ${{ matrix.variant.config }}
+    name: bindings / ${{ matrix.variant.os }} / ${{ matrix.python-version }} / ${{ matrix.variant.config }}
     env:
       NB_CPU: 1
       CMAKE_FLAGS: ""
@@ -116,27 +112,18 @@ jobs:
     - name: Environment Setup (Linux)
       if: matrix.variant.os == 'ubuntu-latest'
       run: |
-        sudo apt-get -y update
         echo "NB_CPU=$(grep -c ^processor /proc/cpuinfo)" >> $GITHUB_ENV
-
-    - name: Environment Setup (Linux/GCC)
-      if: matrix.variant.os == 'ubuntu-latest' && matrix.variant.generator == 'gcc'
-      run: |
+        sudo apt-get -y update
         sudo apt install -y g++ ninja-build
         echo CC=gcc >> $GITHUB_ENV
         echo CXX=g++ >> $GITHUB_ENV
-
-    - name: Environment Setup (Linux/CLang)
-      if: matrix.variant.os == 'ubuntu-latest' && matrix.variant.generator == 'clang'
-      run: |
-        sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
-        echo CC=clang >> $GITHUB_ENV
-        echo CXX=clang++ >> $GITHUB_ENV
 
     - name: Environment Setup (MacOS)
       if: matrix.variant.os == 'macos-latest'
       run: |
         echo NB_CPU=$(sysctl -n hw.ncpu) >> $GITHUB_ENV
+        echo CC=gcc >> $GITHUB_ENV
+        echo CXX=g++ >> $GITHUB_ENV
 
     - name: Build PYD and WHL
       run: |
@@ -165,9 +152,10 @@ jobs:
         variant:
           - {os: windows-latest, arch: x64, config: RelWithDebInfo, py-arch: x64}
           - {os: ubuntu-latest, arch: x64, config: RelWithDebInfo, py-arch: x64}
+          - {os: macos-latest, arch: x64, config: Release, py-arch: x64}
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-    name: Upload release to PyPI
+    name: Upload release ${{ matrix.python-version }} to PyPI
     environment:
       name: pypi
       url: https://pypi.org/p/bochscpu-python
