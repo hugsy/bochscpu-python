@@ -18,7 +18,7 @@ jobs:
           - {os: ubuntu-latest, arch: x64}
           - {os: macos-latest, arch: x64}
     runs-on: ${{ matrix.variant.os }}
-    name: ${{ matrix.variant.os }} / ${{ matrix.variant.arch }}
+    name: bochscpu / ${{ matrix.variant.os }} / ${{ matrix.variant.arch }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -76,7 +76,7 @@ jobs:
           - {os: macos-latest, generator: clang, arch: x64, config: Release, py-arch: x64}
         #   - {os: macos-latest, generator: clang, arch: x64, config: Debug, py-arch: x64}
     runs-on: ${{ matrix.variant.os }}
-    name: ${{ matrix.variant.os }} / ${{ matrix.python-version }} / ${{ matrix.variant.config }}
+    name: bindings / ${{ matrix.variant.os }} / ${{ matrix.python-version }} / ${{ matrix.variant.config }}
     env:
       NB_CPU: 1
       CMAKE_FLAGS: ""
@@ -137,8 +137,8 @@ jobs:
       if: matrix.variant.os == 'macos-latest'
       run: |
         echo NB_CPU=$(sysctl -n hw.ncpu) >> $GITHUB_ENV
-        echo CC=clang >> $GITHUB_ENV
-        echo CXX=clang++ >> $GITHUB_ENV
+        echo CC=gcc >> $GITHUB_ENV
+        echo CXX=g++ >> $GITHUB_ENV
 
     - name: Build PYD and WHL
       run: |
@@ -169,7 +169,7 @@ jobs:
           - {os: ubuntu-latest, arch: x64, config: RelWithDebInfo, py-arch: x64}
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-    name: Upload release to PyPI
+    name: Upload release ${{ matrix.python-version }} to PyPI
     environment:
       name: pypi
       url: https://pypi.org/p/bochscpu-python
