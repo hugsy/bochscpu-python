@@ -46,7 +46,7 @@ jobs:
         cp -Verbose bxbuild/bochscpu-ffi/target/debug/*.lib artifact/relwithdebinfo/
 
     - name: Build BochsCPU (Linux & MacOS)
-      if: steps.cache-artifacts.outputs.cache-hit != 'true' && (matrix.variant.os == 'macos-latest' || matrix.variant.os == 'ubuntu-latest')
+      if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os != 'windows-latest'
       run: |
         chmod +x .github/build-bochscpu.sh; .github/build-bochscpu.sh
         mkdir artifact artifact/Release artifact/Debug artifact/RelWithDebInfo
@@ -68,13 +68,10 @@ jobs:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11']
         variant:
-          - {os: windows-latest, generator: msvc, arch: x64, config: RelWithDebInfo, py-arch: x64}
-        #   - {os: windows-latest, generator: msvc, arch: x64, config: Debug, py-arch: x64}
-        #   - {os: windows-latest, generator: msvc, arch: arm64, config: RelWithDebInfo, py-arch: x64} # Unsupported (see https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json)
-          - {os: ubuntu-latest, generator: gcc, arch: x64, config: RelWithDebInfo, py-arch: x64}
-        #   - {os: ubuntu-latest, generator: gcc, arch: x64, config: Debug, py-arch: x64}
-          - {os: macos-latest, generator: clang, arch: x64, config: Release, py-arch: x64}
-        #   - {os: macos-latest, generator: clang, arch: x64, config: Debug, py-arch: x64}
+          - {os: windows-latest, arch: x64, config: RelWithDebInfo, py-arch: x64}
+        #   - {os: windows-latest, arch: arm64, config: RelWithDebInfo, py-arch: x64} # Unsupported (see https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json)
+          - {os: ubuntu-latest, arch: x64, config: RelWithDebInfo, py-arch: x64}
+          - {os: macos-latest, arch: x64, config: Release, py-arch: x64}
     runs-on: ${{ matrix.variant.os }}
     name: bindings / ${{ matrix.variant.os }} / ${{ matrix.python-version }} / ${{ matrix.variant.config }}
     env:
@@ -116,22 +113,11 @@ jobs:
     - name: Environment Setup (Linux)
       if: matrix.variant.os == 'ubuntu-latest'
       run: |
-        sudo apt-get -y update
         echo "NB_CPU=$(grep -c ^processor /proc/cpuinfo)" >> $GITHUB_ENV
-
-    - name: Environment Setup (Linux/GCC)
-      if: matrix.variant.os == 'ubuntu-latest' && matrix.variant.generator == 'gcc'
-      run: |
+        sudo apt-get -y update
         sudo apt install -y g++ ninja-build
         echo CC=gcc >> $GITHUB_ENV
         echo CXX=g++ >> $GITHUB_ENV
-
-    - name: Environment Setup (Linux/CLang)
-      if: matrix.variant.os == 'ubuntu-latest' && matrix.variant.generator == 'clang'
-      run: |
-        sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
-        echo CC=clang >> $GITHUB_ENV
-        echo CXX=clang++ >> $GITHUB_ENV
 
     - name: Environment Setup (MacOS)
       if: matrix.variant.os == 'macos-latest'
