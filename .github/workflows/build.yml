@@ -8,10 +8,13 @@ on:
     tags:
     - 'v*'
 
+env:
+  NB_CPU: 1
+
 jobs:
   bochscpu:
     env:
-      BOCHS_REV: HEAD
+      BOCHS_REV: fcea81a0425e0e4c6726dad46f0f3837789fe06c
     strategy:
       fail-fast: false
       matrix:
@@ -50,7 +53,7 @@ jobs:
     - name: Build BochsCPU (Linux & MacOS)
       if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os != 'windows-latest'
       run: |
-        chmod +x .github/build-bochscpu.sh; .github/build-bochscpu.sh
+        bash .github/build-bochscpu.sh
         mkdir artifact artifact/Release artifact/Debug artifact/RelWithDebInfo
         cp -v bxbuild/bochscpu-ffi/target/release/lib*.a artifact/Release/
         cp -v bxbuild/bochscpu-ffi/target/debug/lib*.a artifact/Debug/
@@ -76,7 +79,6 @@ jobs:
     runs-on: ${{ matrix.variant.os }}
     name: bindings / ${{ matrix.variant.os }} / ${{ matrix.python-version }} / ${{ matrix.variant.config }}
     env:
-      NB_CPU: 1
       CMAKE_FLAGS: ""
     steps:
     - name: Checkout
