@@ -39,8 +39,8 @@ REM Now its time to build it.
 cd ..\..\..\bochscpu-ffi
 REM cargo clean -p bochscpu shits its pants on my computer so rebuilding everything
 cargo clean
-cargo build
-cargo build --release
+cargo build -j %%NB_CPU%%
+cargo build -j %%NB_CPU%% --release
 
 REM Get back to where we were.
 popd

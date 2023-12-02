@@ -8,6 +8,8 @@ set -e
 
 pushd .
 
+test -z $NB_CPU && NB_CPU=1
+
 mkdir bxbuild
 cd bxbuild
 
@@ -16,7 +18,7 @@ git clone https://github.com/hugsy/bochscpu.git
 git clone https://github.com/yrp604/bochscpu-ffi.git
 
 cd bochscpu-build
-bash prep.sh && cd Bochs/bochs && sh .conf.cpu && make || true
+bash prep.sh && cd Bochs/bochs && sh .conf.cpu && make -j ${NB_CPU}|| true
 
 # Remove old files in bochscpu.
 rm -rf ../../../bochscpu/bochs
@@ -38,8 +40,8 @@ mv bochs ../../bochscpu/bochs
 cd ../../bochscpu-ffi
 
 cargo clean
-cargo build
-cargo build --release
+cargo build -j ${NB_CPU}
+cargo build -j ${NB_CPU} --release
 
 # Get back to where we were.
 popd
