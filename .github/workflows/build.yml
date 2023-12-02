@@ -63,7 +63,7 @@ jobs:
         echo "BOCHSCPU_LIBFILE_NUM=$(find artifact -type f -name 'lib*.a' | wc -l)" >> $GITHUB_ENV
 
     - name: Check Artifact
-      if: ${{ env.BOCHSCPU_LIBFILE_NUM }} == 0
+      if: env.BOCHSCPU_LIBFILE_NUM == 0
       run: exit 1
 
     - name: Upload artifacts
