@@ -26,6 +26,7 @@ rm -rf ../../../bochscpu/lib
 
 # Create the libs directory where we stuff all the libs.
 mkdir ../../../bochscpu/lib
+cp memory/libmemory.a ../../../bochscpu/lib/libmemory.a
 cp cpu/libcpu.a ../../../bochscpu/lib/libcpu.a
 cp cpu/fpu/libfpu.a ../../../bochscpu/lib/libfpu.a
 cp cpu/avx/libavx.a ../../../bochscpu/lib/libavx.a
