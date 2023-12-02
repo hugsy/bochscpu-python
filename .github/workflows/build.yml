@@ -10,6 +10,8 @@ on:
 
 jobs:
   bochscpu:
+    env:
+      BOCHS_REV: HEAD
     strategy:
       fail-fast: false
       matrix:
