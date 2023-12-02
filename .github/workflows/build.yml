@@ -11,7 +11,7 @@ on:
 jobs:
   bochscpu:
     env:
-      BOCHS_REV: c48a50141b6ade6c6b0744280a598b55d906bb9e
+      BOCHS_REV: 2a3321d01254f9804ad19c84931043a76526480f
     strategy:
       fail-fast: false
       matrix:
