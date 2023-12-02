@@ -1,5 +1,5 @@
 import logging
-import os
+import sys
 
 import keystone
 import bochscpu
@@ -9,38 +9,17 @@ import bochscpu.utils
 
 PAGE_SIZE = bochscpu.utils.PAGE_SIZE
 
-def hexdump(
-    source: bytes, length: int = 0x10, separator: str = ".", base: int = 0x00
-) -> str:
-    result = []
-    align = length + 2
-
-    for i in range(0, len(source), length):
-        chunk = bytearray(source[i : i + length])
-        hexa = " ".join(map(lambda x: f"{x:02X}", chunk))
-        text = "".join([chr(b) if 0x20 <= b < 0x7F else separator for b in chunk])
-        result.append(f"{base + i:#0{align}x}   {hexa:<{3 * length}}    {text}")
-    return os.linesep.join(result)
-
 
 def missing_page_cb(gpa: int):
     raise Exception(f"missing_page_cb({gpa=:#x})")
 
 
-def before_execution_cb(sess: bochscpu.Session, cpu_id: int, _: int):
+def before_execution_cb(sess: bochscpu.Session, cpu_id: int, insn: int):
     logging.debug(f"[CPU#{cpu_id}] before PC={sess.cpu.rip:#08x}")
 
 
-def after_execution_cb(sess: bochscpu.Session, cpu_id: int, _: int):
+def after_execution_cb(sess: bochscpu.Session, cpu_id: int, insn: int):
     logging.debug(f"[CPU#{cpu_id}] after PC={sess.cpu.rip:#08x}")
-
-
-def cache_cntrl_cb(sess: bochscpu.Session, a1: int, a2: int):
-    logging.debug("in cache_cntrl_cb")
-
-
-def clflush_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
-    logging.debug("in clflush_cb")
 
 
 def cnear_branch_not_taken_cb(sess: bochscpu.Session, cpu_id: int, before: int, after: int):
@@ -51,27 +30,9 @@ def cnear_branch_taken_cb(sess: bochscpu.Session, cpu_id: int, before: int, afte
     logging.debug(f"in cnear_branch_taken_cb, {cpu_id=:#x} {before=:#x} {after=:#x}")
 
 
-def far_branch_cb(
-    sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int, a5: int, a6: int
-):
-    logging.debug("far_branch_cb")
-
-
 def hlt_cb(sess: bochscpu.Session, reason: int):
     logging.debug(f"in hlt_cb, {reason=:#x}")
     sess.stop()
-
-
-def hw_interrupt_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int):
-    logging.debug("in hw_interrupt_cb")
-
-
-def inp_cb(sess: bochscpu.Session, a1: int, a2: int):
-    logging.debug("in inp_cb")
-
-
-def inp2_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
-    logging.debug("in inp2_cb")
 
 
 def interrupt_cb(sess: bochscpu.Session, cpu_id: int, int_num: int):
@@ -79,65 +40,21 @@ def interrupt_cb(sess: bochscpu.Session, cpu_id: int, int_num: int):
     mode = sess.cpu.state.rax >> 8
     match int_num, mode:
         case 0x10, 0x0e:
-            # https://en.wikipedia.org/wiki/INT_10H
+            #
+            # This is the main juice of the emulated interruption
+            # ref: https://en.wikipedia.org/wiki/INT_10H
+            #
             char = chr(sess.cpu.state.rax & 0xff)
-            # pg_num = sess.cpu.state.rbx & 0xf0
-            # color = sess.cpu.state.rbx & 0x0f
-            print(f"{char=}")
+            print(f"{char}", end="")
+
+            #
+            # We've emulated a print, let's cheap and just resume executing at the next IP
+            # (avoid creating an IDT etc.)
+            #
+            sess.cpu.rip += 1
+
         case _:
             logging.warning(f"[CPU#{cpu_id}] unsupported interrupt {int_num}")
-
-
-def lin_access_cb(
-    sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int, a5: int, a6: int
-):
-    logging.debug("in lin_access_cb")
-
-
-def mwait_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int):
-    logging.debug("in mwait_cb")
-
-
-def opcode_cb(
-    sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int, a5: bool, a6: bool
-):
-    logging.debug("in opcode_cb")
-
-
-def outp_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
-    logging.debug("in outp_cb")
-
-
-def phy_access_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int, a5: int):
-    logging.debug("in phy_access_cb")
-
-
-def prefetch_hint_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int):
-    logging.debug("in prefetch_hint_cb")
-
-
-def repeat_iteration_cb(sess: bochscpu.Session, a1: int, a2: int):
-    logging.debug("in repeat_iteration_cb")
-
-
-def reset_cb(sess: bochscpu.Session, a1: int, a2: int):
-    logging.debug("in reset_cb")
-
-
-def tlb_cntrl_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
-    logging.debug("in tlb_cntrl_cb")
-
-
-def ucnear_branch_cb(sess: bochscpu.Session, cpu_id: int, a2: int, a3: int, a4: int):
-    logging.debug(f"in ucnear_branch_cb, {cpu_id=:#x} {a2=:#x} {a3=:#x}  {a4=:#x}")
-
-
-def vmexit_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
-    logging.debug("in vmexit_cb")
-
-
-def wrmsr_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
-    logging.debug("in wrmsr_cb")
 
 
 def exception_cb(
@@ -148,12 +65,11 @@ def exception_cb(
 ):
     match (vector, error_code):
         case _:
-            v = bochscpu.cpu.ExceptionType(vector)
-            logging.warning(f"[CPU#{cpu_id}] Received exception({v}, {error_code=:d}) ")
+            logging.warning(f"[CPU#{cpu_id}] Received exception({bochscpu.cpu.ExceptionType(vector)}, {error_code=:d}) ")
     sess.stop()
 
 
-def emulate(code_str: str):
+def emulate(code_str: str, data: bytes):
     #
     # Use Keystone to compile the assembly
     #
@@ -177,7 +93,7 @@ def emulate(code_str: str):
     data_hva = bochscpu.memory.allocate_host_page()
     data_gpa = 0x0000_2000
     bochscpu.memory.page_insert(data_gpa, data_hva)
-    bochscpu.memory.phy_write(data_gpa, bytearray(b"ello world!"))
+    bochscpu.memory.phy_write(data_gpa, bytearray(data))
 
     stack_hva = bochscpu.memory.allocate_host_page()
     stack_gpa = 0x0000_8000
@@ -252,9 +168,9 @@ def emulate(code_str: str):
 
     #
     # Assign segment to the state, CS, DS and SS are always required
+    # We also set the interrupt table
     #
     state.ds = _ds
-
 
     # The SP will be at ss:[0x0800]
     state.ss = _ss
@@ -272,33 +188,16 @@ def emulate(code_str: str):
     sess.cpu.state = state
 
     #
-    # For demo purposes, we add mock callbacks for everything bochs can instrument
+    # For demo purposes, we add a few callbacks but they're not all useful.
     #
     hook = bochscpu.Hook()
     hook.after_execution = after_execution_cb
     hook.before_execution = before_execution_cb
-    hook.cache_cntrl = cache_cntrl_cb
-    hook.clflush = clflush_cb
     hook.cnear_branch_not_taken = cnear_branch_not_taken_cb
     hook.cnear_branch_taken = cnear_branch_taken_cb
     hook.exception = exception_cb
-    hook.far_branch = far_branch_cb
     hook.hlt = hlt_cb
-    hook.hw_interrupt = hw_interrupt_cb
-    hook.inp = inp_cb
     hook.interrupt = interrupt_cb
-    hook.lin_access = lin_access_cb
-    hook.mwait = mwait_cb
-    hook.opcode = opcode_cb
-    hook.outp = outp_cb
-    hook.phy_access = phy_access_cb
-    hook.prefetch_hint = prefetch_hint_cb
-    hook.repeat_iteration = repeat_iteration_cb
-    hook.reset = reset_cb
-    hook.tlb_cntrl = tlb_cntrl_cb
-    hook.ucnear_branch = ucnear_branch_cb
-    hook.vmexit = vmexit_cb
-    hook.wrmsr = wrmsr_cb
 
     hooks = [hook]
 
@@ -324,9 +223,12 @@ def emulate(code_str: str):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(format="%(levelname)-7s - %(message)s", level=logging.DEBUG)
-    code = """
-print:
+    if "--debug" in sys.argv[1:]:
+        logging.basicConfig(format="%(levelname)-7s - %(message)s", level=logging.DEBUG)
+    else:
+        logging.basicConfig(format="%(levelname)-7s - %(message)s", level=logging.INFO)
+    print_msg_asm = """
+_start:
     push ax
 
 printchar:
@@ -337,11 +239,11 @@ printchar:
     mov ah, 0x0E
     int 0x10
 
-    inc si
+    nop
     jmp printchar
 
 end:
     pop ax
     hlt
 """
-    emulate(code)
+    emulate(print_msg_asm, b"Hello 16-bit assembly!\n\0")
