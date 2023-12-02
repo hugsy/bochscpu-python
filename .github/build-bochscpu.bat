@@ -12,7 +12,7 @@ mkdir bxbuild
 cd bxbuild
 
 REM Use WSL to configure / clone the repositories.
-bash -c "git clone https://github.com/yrp604/bochscpu-build.git && git clone https://github.com/yrp604/bochscpu && git clone https://github.com/yrp604/bochscpu-ffi && cd bochscpu-build && bash prep.sh && cd Bochs/bochs && bash .conf.cpu-msvc"
+bash -c "git clone https://github.com/yrp604/bochscpu-build.git && git clone https://github.com/hugsy/bochscpu.git && git clone https://github.com/yrp604/bochscpu-ffi.git && cd bochscpu-build && bash prep.sh && cd Bochs/bochs && bash .conf.cpu-msvc"
 
 REM Build bochs; libinstrument.a is expected to fail to build so don't freak out.
 REM You can run nmake all-clean to clean up the build.
