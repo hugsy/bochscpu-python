@@ -33,7 +33,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: artifact
-        key: bochscpu-cache-${{ matrix.variant.os }}-${{ matrix.variant.arch }}
+        key: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ env.BOCHS_REV }}
 
     - if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'windows-latest'
       run: |
@@ -75,7 +75,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         if-no-files-found: error
-        name: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ env.BOCHS_REV }}
+        name: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}
         path: artifact
 
   bindings:
