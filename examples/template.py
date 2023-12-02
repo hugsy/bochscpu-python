@@ -20,11 +20,11 @@ def missing_page_cb(gpa: int):
     raise RuntimeError(f"missing_page_cb({gpa=:#x})")
 
 
-def before_execution_cb(sess: bochscpu.Session, cpu_id: int, _: int):
+def before_execution_cb(sess: bochscpu.Session, cpu_id: int, insn: int):
     logging.debug(f"[CPU#{cpu_id}] before PC={sess.cpu.rip:#x}")
 
 
-def after_execution_cb(sess: bochscpu.Session, cpu_id: int, _: int):
+def after_execution_cb(sess: bochscpu.Session, cpu_id: int, insn: int):
     logging.debug(f"[CPU#{cpu_id}] after PC={sess.cpu.rip:#x}")
 
 
@@ -44,97 +44,97 @@ def exception_cb(
 #
 # All the other callback prototypes - see `instrumentation.txt`
 #
-def cache_cntrl_cb(sess: bochscpu.Session, a1: int, a2: int):
+def cache_cntrl_cb(sess: bochscpu.Session, cpu_id: int, what: int):
     pass
 
 
-def clflush_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+def clflush_cb(sess: bochscpu.Session, cpu_id: int, lin_addr: int, phy_addr: int):
     pass
 
 
-def cnear_branch_not_taken_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+def cnear_branch_not_taken_cb(sess: bochscpu.Session, cpu_id: int, branch_ip: int, new_ip: int):
     pass
 
 
-def cnear_branch_taken_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+def cnear_branch_taken_cb(sess: bochscpu.Session, cpu_id: int, branch_ip: int, new_ip: int):
     pass
 
 
 def far_branch_cb(
-    sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int, a5: int, a6: int
+    sess: bochscpu.Session, cpu_id: int, what: int, prev_cs: int, prev_ip: int, new_cs: int, new_ip: int
 ):
     pass
 
 
-def hlt_cb(sess: bochscpu.Session, a1: int):
+def hlt_cb(sess: bochscpu.Session, cpu_id: int):
     pass
 
 
-def hw_interrupt_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int):
+def hw_interrupt_cb(sess: bochscpu.Session, cpu_id: int, vector: int, cs: int, ip: int):
     pass
 
 
-def inp_cb(sess: bochscpu.Session, a1: int, a2: int):
+def inp_cb(sess: bochscpu.Session, cpu_id: int, len: int):
     pass
 
 
-def inp2_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+def inp2_cb(sess: bochscpu.Session, cpu_id: int, len: int, val: int):
     pass
 
 
-def interrupt_cb(sess: bochscpu.Session, a1: int, a2: int):
+def interrupt_cb(sess: bochscpu.Session, cpu_id: int, int_num: int):
     pass
 
 
 def lin_access_cb(
-    sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int, a5: int, a6: int
+    sess: bochscpu.Session, cpu_id: int, lin: int, phy: int, len: int, memtype: int, rw: int
 ):
     pass
 
 
-def mwait_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int):
+def mwait_cb(sess: bochscpu.Session, cpu_id: int, addr: int, len: int, flags: int):
     pass
 
 
 def opcode_cb(
-    sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int, a5: bool, a6: bool
+    sess: bochscpu.Session, cpu_id: int, insn: int, opcode: int, len: int, is32: bool, is64: bool
 ):
     pass
 
 
-def outp_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+def outp_cb(sess: bochscpu.Session, cpu_id: int, len: int, val: int):
     pass
 
 
-def phy_access_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int, a5: int):
+def phy_access_cb(sess: bochscpu.Session, cpu_id: int, lin: int, phy: int, len: int, memtype: int, rw: int):
     pass
 
 
-def prefetch_hint_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int):
+def prefetch_hint_cb(sess: bochscpu.Session, cpu_id: int, what: int, seg: int, offset: int):
     pass
 
 
-def repeat_iteration_cb(sess: bochscpu.Session, a1: int, a2: int):
+def repeat_iteration_cb(sess: bochscpu.Session, cpu_id: int, insn: int):
     pass
 
 
-def reset_cb(sess: bochscpu.Session, a1: int, a2: int):
+def reset_cb(sess: bochscpu.Session, cpu_id: int, a2: int):
     pass
 
 
-def tlb_cntrl_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+def tlb_cntrl_cb(sess: bochscpu.Session, cpu_id: int, what: int, new_cr_value: int):
     pass
 
 
-def ucnear_branch_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int, a4: int):
+def ucnear_branch_cb(sess: bochscpu.Session, cpu_id: int, what: int, branch_ip: int, new_branch_ip: int):
     pass
 
 
-def vmexit_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+def vmexit_cb(sess: bochscpu.Session, cpu_id: int, reason: int, qualification: int):
     pass
 
 
-def wrmsr_cb(sess: bochscpu.Session, a1: int, a2: int, a3: int):
+def wrmsr_cb(sess: bochscpu.Session, cpu_id: int, msr: int, value: int):
     pass
 
 
@@ -172,6 +172,9 @@ def emulate():
     #
     # Defines hook: a hook is one specific set of callbacks. Many hooks can be created, and
     # they are all chained together when running the code
+    #
+    # The instrumentation bible is here
+    # https://github.com/bochs-emu/Bochs/blob/master/bochs/instrument/instrumentation.txt
     #
     hook = bochscpu.Hook()
     hook.after_execution = after_execution_cb
