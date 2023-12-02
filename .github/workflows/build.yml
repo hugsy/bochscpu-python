@@ -15,6 +15,7 @@ jobs:
   bochscpu:
     env:
       BOCHS_REV: fcea81a0425e0e4c6726dad46f0f3837789fe06c
+      BOCHSCPU_LIBFILE_NUM: 0
     strategy:
       fail-fast: false
       matrix:
@@ -33,7 +34,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: artifact
-        key: bochscpu-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-artifact-win-lin-macos
+        key: bochscpu-cache-${{ matrix.variant.os }}-${{ matrix.variant.arch }}
 
     - uses: microsoft/setup-msbuild@v1
       if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'windows-latest'
@@ -49,6 +50,7 @@ jobs:
         cp -Verbose bxbuild/bochscpu-ffi/target/release/*.lib artifact/release/
         cp -Verbose bxbuild/bochscpu-ffi/target/debug/*.lib artifact/debug/
         cp -Verbose bxbuild/bochscpu-ffi/target/debug/*.lib artifact/relwithdebinfo/
+        echo BOCHSCPU_LIBFILE_NUM=(Get-ChildItem -Path artifact -File -Recurse -Filter '*.lib').Count | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Build BochsCPU (Linux & MacOS)
       if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os != 'windows-latest'
@@ -58,6 +60,11 @@ jobs:
         cp -v bxbuild/bochscpu-ffi/target/release/lib*.a artifact/Release/
         cp -v bxbuild/bochscpu-ffi/target/debug/lib*.a artifact/Debug/
         cp -v bxbuild/bochscpu-ffi/target/debug/lib*.a artifact/RelWithDebInfo/
+        echo "BOCHSCPU_LIBFILE_NUM=$(find artifact -type f -name 'lib*.a' | wc -l)" >> $GITHUB_ENV
+
+    - name: Check Artifact
+      if: ${{ env.BOCHSCPU_LIBFILE_NUM }} == 0
+      run: exit 1
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
