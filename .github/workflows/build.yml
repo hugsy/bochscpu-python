@@ -11,7 +11,7 @@ on:
 jobs:
   bochscpu:
     env:
-      BOCHS_REV: HEAD
+      BOCHS_REV: c48a50141b6ade6c6b0744280a598b55d906bb9e
     strategy:
       fail-fast: false
       matrix:
@@ -30,7 +30,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: artifact
-        key: bochscpu-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-artifact-win-lin
+        key: bochscpu-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-artifact-win-lin-macos
 
     - uses: microsoft/setup-msbuild@v1
       if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'windows-latest'
