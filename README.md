@@ -6,10 +6,8 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) 
 [![Licence MIT](https://img.shields.io/packagist/l/doctrine/orm.svg?maxAge=2592000?style=plastic)](https://github.com/hugsy/bochscpu-python/blob/main/LICENSE)
 
+Python bindings for [@yrp](https://github.com/yrp604/)'s [BochsCPU](https://github.com/yrp604/bochscpu) using [FFI](https://github.com/yrp604/bochscpu-ffi) to easily and accurately emulate x86 code.
 
-Python bindings for [@yrp](https://github.com/yrp604/)'s [BochsCPU](https://github.com/yrp604/bochscpu) using [FFI](https://github.com/yrp604/bochscpu-ffi)
-
-![image](https://i.imgur.com/YvXg2Tz.png)
 
 ## Install
 
@@ -55,7 +53,7 @@ Note that this approach will require you to have all the building tools necessar
  * Python 3.8+ (with development kit)
  * `cmake`
  * `pip`
- * a C++20 compatible compiler (tested `cl` for Windows, `clang` for Linux) 
+ * a C++20 compatible compiler (tested `cl` for Windows, `clang++` for MacOS and `g++` Linux) 
 
 ### Steps
 
@@ -75,12 +73,24 @@ python -m pip wheel .
 
 Just import the `bochscpu` module and let the fun begin! Installing the package will also install interface files, allowing modern IDEs (VSCode, PyCharm, etc.) to offer useful completion.
 
+
+## Gallery
+
+### Emulate a Fibonascii sequence in x64 long mode
+
+![image](https://github.com/hugsy/bochscpu-python/assets/590234/037e581f-c57d-4b0b-a136-6925ceecfbca)
+
+
+### Emulate code from a Windows 11 x64 memory dump 
+
+![image](https://github.com/hugsy/bochscpu-python/assets/590234/2ea77b17-cf59-4ec3-a38b-602d63e201f8)
+
+
+### Emulate a `print("hello world")`-like assembly code in 16 bit real mode
+
+![image](https://github.com/hugsy/bochscpu-python/assets/590234/1a49d9ef-f18a-4943-b483-4c59e64ffa82)
+
 ## Enjoy 🍻
 
-## TODO
-
- * [ ] Add more complete examples
- * [ ] Add basic usage examples
- * [ ] Add API docs 
 
 
