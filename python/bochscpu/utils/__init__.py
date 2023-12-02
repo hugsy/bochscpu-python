@@ -1,5 +1,7 @@
 import struct
+from typing import Optional
 
+import bochscpu.cpu
 import bochscpu.memory
 import bochscpu._bochscpu as _bochscpu
 
@@ -15,17 +17,57 @@ def dump_registers(state: _bochscpu.State, include_kernel: bool = False):
         state (_bochscpu.State): _description_
         include_kernel (bool): _description_
     """
-    # TODO adjust registers depending on cpu mode
+
+    gprs: dict[str, tuple[Optional[str], Optional[str], str]] = {
+        # keyname: (real, protected, long)
+        "rax": ("ax", "eax", "rax"),
+        "rbx": ("bx", "ebx", "rbx"),
+        "rdx": ("cx", "ecx", "rcx"),
+        "rdx": ("dx", "edx", "rdx"),
+        "rsi": ("si", "esi", "rsi"),
+        "rdi": ("di", "edi", "rdi"),
+        "rbp": ("bp", "ebp", "rbp"),
+        "rsp": ("sp", "esp", "rsp"),
+        "rip": ("ip", "eip", "rip"),
+        "r8": (None, None, " r8"),
+        "r9": (None, None, " r9"),
+        "r10": (None, None, "r10"),
+        "r11": (None, None, "r11"),
+        "r12": (None, None, "r12"),
+        "r13": (None, None, "r13"),
+        "r14": (None, None, "r14"),
+        "r15": (None, None, "r15"),
+    }
+
+    if bochscpu.cpu.is_real_mode(state):
+        idx = 0
+        fmt = 8
+    elif bochscpu.cpu.is_protected_mode(state):
+        idx = 1
+        fmt = 8
+    elif bochscpu.cpu.is_long_mode(state):
+        idx = 2
+        fmt = 16
+    else:
+        raise Exception("invalid state")
+
+    i = 0
+    max_regs_per_line = 3
+    for reg, names in gprs.items():
+        if i % max_regs_per_line == 0:
+            print("")
+        name = names[idx]
+        if not name:
+            continue
+        value = getattr(state, reg)
+        print(f"{name}={value:0{fmt}x}", end=" ")
+        i += 1
+
     print(
         f"""
-rax={state.rax:016x} rbx={state.rbx:016x} rcx={state.rcx:016x}
-rdx={state.rdx:016x} rsi={state.rsi:016x} rdi={state.rdi:016x}
-rip={state.rip:016x} rsp={state.rsp:016x} rbp={state.rbp:016x}
- r8={ state.r8:016x}  r9={ state.r9:016x} r10={state.r10:016x}
-r11={state.r11:016x} r12={state.r12:016x} r13={state.r13:016x}
-r14={state.r14:016x} r15={state.r15:016x} efl={state.rflags:016x}
+efl={state.rflags:08x} {str(bochscpu.cpu.FlagRegister(state.rflags))}
 cs={int(state.cs):04x}  ss={int(state.ss):04x}  ds={int(state.ds):04x}  es={int(state.es):04x}  fs={int(state.fs):04x}  gs={int(state.gs):04x}
-"""
+    """
     )
 
     if not include_kernel:

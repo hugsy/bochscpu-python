@@ -345,7 +345,7 @@ class ControlRegister:
 
 class ControlRegisterFlag(Flag):
     """
-    <attribute '__doc__' of 'ControlRegisterFlag' objects>
+    x86 ControlRegisterFlag class
     """
 
     PG: ControlRegisterFlag
@@ -782,11 +782,11 @@ class SegmentFlags:
         ...
     @property
     def S(self) -> bool:
-        """Get SegmentType - CS/SS only (1)"""
+        """Get System Flag (True - Code & Data, False - System)"""
         ...
     @S.setter
     def S(self, value: bool):
-        """Set SegmentType - CS/SS only (1)"""
+        """Set System Flag (True - Code & Data, False - System)"""
         ...
     @property
     def DPL(self) -> int:
@@ -795,6 +795,14 @@ class SegmentFlags:
     @DPL.setter
     def DPL(self, value: int):
         """Set Descriptor Privilege Level"""
+        ...
+    @property
+    def Type(self) -> int:
+        """Get Descriptor Type as a 4-bit int"""
+        ...
+    @Type.setter
+    def Type(self, value: int):
+        """Set Descriptor Type as a 4-bit int"""
         ...
     @property
     def P(self) -> bool:
