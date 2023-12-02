@@ -13,7 +13,7 @@ test -z $NB_CPU && NB_CPU=1
 mkdir bxbuild
 cd bxbuild
 
-git clone https://github.com/yrp/bochscpu-build.git
+git clone https://github.com/yrp604/bochscpu-build.git
 git clone https://github.com/hugsy/bochscpu.git
 git clone https://github.com/yrp604/bochscpu-ffi.git
 
