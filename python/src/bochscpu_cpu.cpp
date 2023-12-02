@@ -429,6 +429,26 @@ bochscpu_cpu_module(nb::module_& base_module)
             },
             "IOPL I/O Privilege Level R/W")
 
+        .def_prop_rw(
+            "Type",
+            [](BochsCPU::Cpu::SegmentFlags& x)
+            {
+                uint32_t type = x.to_ulong();
+                type <<= 21;
+                type >>= 8;
+                return type;
+            },
+            [](BochsCPU::Cpu::SegmentFlags& x, uint8_t type)
+            {
+                if ( type & 0xF0 )
+                    throw std::runtime_error("Invalid type value");
+                x.set(8, type & 1);
+                x.set(9, type & 2);
+                x.set(10, type & 4);
+                x.set(11, type & 8);
+            },
+            "Segment descriptor type value")
+
         .def(
             "__repr__",
             [](BochsCPU::Cpu::SegmentFlags const& x)
