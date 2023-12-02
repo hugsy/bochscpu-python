@@ -26,7 +26,6 @@ rmdir /s /q ..\..\..\bochscpu\lib
 
 REM Create the libs directory where we stuff all the libs.
 mkdir ..\..\..\bochscpu\lib
-copy memory\libmemory.a ..\..\..\bochscpu\lib\memory.lib
 copy cpu\libcpu.a ..\..\..\bochscpu\lib\cpu.lib
 copy cpu\fpu\libfpu.a ..\..\..\bochscpu\lib\fpu.lib
 copy cpu\avx\libavx.a ..\..\..\bochscpu\lib\avx.lib
