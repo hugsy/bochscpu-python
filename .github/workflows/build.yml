@@ -8,8 +8,13 @@ on:
     tags:
     - 'v*'
 
+env:
+  NB_CPU: 1
+
 jobs:
   bochscpu:
+    env:
+      BOCHS_REV: 8dd9649389c813a189e3f702d58cdedb93730343
     strategy:
       fail-fast: false
       matrix:
@@ -19,7 +24,7 @@ jobs:
           - {os: macos-latest, arch: x64}
     runs-on: ${{ matrix.variant.os }}
     name: bochscpu / ${{ matrix.variant.os }} / ${{ matrix.variant.arch }}
-    steps:
+    steps :
     - name: Checkout
       uses: actions/checkout@v3
 
@@ -28,7 +33,19 @@ jobs:
       uses: actions/cache@v3
       with:
         path: artifact
-        key: bochscpu-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-artifact-win-lin
+        key: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ env.BOCHS_REV }}
+
+    - if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'windows-latest'
+      run: |
+        echo NB_CPU=$env:NUMBER_OF_PROCESSORS | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+    - if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'ubuntu-latest'
+      run: |
+        echo "NB_CPU=$(grep -c ^processor /proc/cpuinfo)" >> $GITHUB_ENV
+
+    - if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'macos-latest'
+      run: |
+        echo NB_CPU=$(sysctl -n hw.ncpu) >> $GITHUB_ENV
 
     - uses: microsoft/setup-msbuild@v1
       if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'windows-latest'
@@ -48,7 +65,7 @@ jobs:
     - name: Build BochsCPU (Linux & MacOS)
       if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os != 'windows-latest'
       run: |
-        chmod +x .github/build-bochscpu.sh; .github/build-bochscpu.sh
+        bash .github/build-bochscpu.sh
         mkdir artifact artifact/Release artifact/Debug artifact/RelWithDebInfo
         cp -v bxbuild/bochscpu-ffi/target/release/lib*.a artifact/Release/
         cp -v bxbuild/bochscpu-ffi/target/debug/lib*.a artifact/Debug/
@@ -57,6 +74,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
+        if-no-files-found: error
         name: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}
         path: artifact
 
@@ -74,7 +92,6 @@ jobs:
     runs-on: ${{ matrix.variant.os }}
     name: bindings / ${{ matrix.variant.os }} / ${{ matrix.python-version }} / ${{ matrix.variant.config }}
     env:
-      NB_CPU: 1
       CMAKE_FLAGS: ""
     steps:
     - name: Checkout
@@ -104,8 +121,8 @@ jobs:
     - name: Environment Setup (Windows)
       if: matrix.variant.os == 'windows-latest'
       run: |
-        echo "NB_CPU=$env:NUMBER_OF_PROCESSORS" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        echo "CMAKE_ARCH='-A ${{ matrix.variant.arch }}'" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo NB_CPU=$env:NUMBER_OF_PROCESSORS | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo CMAKE_ARCH='-A ${{ matrix.variant.arch }}' | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         Import-Module .\.github\Invoke-VisualStudio.ps1
         Invoke-VisualStudio2022${{ matrix.variant.arch }}
 

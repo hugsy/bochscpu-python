@@ -12,11 +12,12 @@ mkdir bxbuild
 cd bxbuild
 
 REM Use WSL to configure / clone the repositories.
-bash -c "git clone https://github.com/yrp604/bochscpu-build.git && git clone https://github.com/yrp604/bochscpu && git clone https://github.com/yrp604/bochscpu-ffi && cd bochscpu-build && BOCHS_REV=c48a50141b6ade6c6b0744280a598b55d906bb9e bash prep.sh && cd Bochs/bochs && bash .conf.cpu-msvc"
+bash -c "git clone https://github.com/yrp604/bochscpu-build.git && git clone https://github.com/hugsy/bochscpu.git && git clone https://github.com/yrp604/bochscpu-ffi.git && cd bochscpu-build && bash prep.sh && cd Bochs/bochs && bash .conf.cpu-msvc"
 
 REM Build bochs; libinstrument.a is expected to fail to build so don't freak out.
 REM You can run nmake all-clean to clean up the build.
 cd bochscpu-build\Bochs\bochs
+set CL=/MP
 nmake
 
 REM Remove old files in bochscpu.
@@ -38,8 +39,8 @@ REM Now its time to build it.
 cd ..\..\..\bochscpu-ffi
 REM cargo clean -p bochscpu shits its pants on my computer so rebuilding everything
 cargo clean
-cargo build
-cargo build --release
+cargo build -j %NB_CPU%
+cargo build -j %NB_CPU% --release
 
 REM Get back to where we were.
 popd
