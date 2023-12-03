@@ -10,6 +10,7 @@ on:
 
 env:
   NB_CPU: 1
+  VERSION: '0.1.8'
 
 jobs:
   bochscpu:
@@ -155,7 +156,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: bochscpu-py${{ matrix.python-version }}-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}
+        name: bochscpu-${{ env.VERSION }}-py${{ matrix.python-version }}-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}
         path: |
           artifact/
           wheel/
