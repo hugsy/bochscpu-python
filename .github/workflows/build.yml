@@ -10,6 +10,7 @@ on:
 
 env:
   NB_CPU: 1
+  VERSION: '0.1.8'
 
 jobs:
   bochscpu:
@@ -155,7 +156,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: bochscpu-py${{ matrix.python-version }}-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}
+        name: bochscpu-${{ env.VERSION }}-py${{ matrix.python-version }}-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}
         path: |
           artifact/
           wheel/
@@ -172,7 +173,7 @@ jobs:
           - {os: macos-latest, arch: x64, config: Release, py-arch: x64}
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-    name: Upload release ${{ matrix.python-version }} to PyPI
+    name: PyPI upload of ${{ matrix.variant.os }}/${{ matrix.python-version }}/py${{ matrix.python-version }}
     environment:
       name: pypi
       url: https://pypi.org/p/bochscpu-python
@@ -183,7 +184,7 @@ jobs:
         uses: actions/download-artifact@v3
         id: download_wheels
         with:
-          name: bochscpu-py${{ matrix.python-version }}-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}
+          name: bochscpu-${{ env.VERSION }}-py${{ matrix.python-version }}-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}
           path: wheel
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
