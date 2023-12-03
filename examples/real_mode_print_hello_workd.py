@@ -181,8 +181,9 @@ def emulate(code_str: str, data: bytes):
     state.rip = 0x0000
 
     #
-    # Ok! Our CPU is now in valid state for paging allowing to resolve logical addresses
-    # Apply the state to the emulation session
+    # Ok! Our CPU is now in valid state for segmenting allowing to resolve 
+    # logical addresses.All left to do is to apply the state to the emulation
+    # session
     #
     logging.debug("Applying CPU state")
     sess.cpu.state = state
