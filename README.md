@@ -105,7 +105,9 @@ Emulate code from a Windows 11 x64 memory dump
 Emulate a <code>print("hello world")</code>-like assembly code in 16 bit real mode
 </summary>
 
-<video src="demos/real-mode-print-hello.mp4"/>
+
+https://github.com/hugsy/bochscpu-python/assets/590234/eb06af06-4b10-490e-ae40-a1d0aed333ca
+
 
 [Code](examples/real_mode_print_hello_world.py)
 </details>
@@ -115,7 +117,10 @@ Emulate a <code>print("hello world")</code>-like assembly code in 16 bit real mo
 Emulate Linux Glibc's <code>rand()</code> function on x64
 </summary>
 
-<video src="demos/linux-x64-rand-emulation.mp4"/>
+
+https://github.com/hugsy/bochscpu-python/assets/590234/2486adbc-0878-46f5-83ed-3bcf9774fd26
+
+
 [Code](examples/long_mode_emulate_linux_udump.py)
 
 </details>
