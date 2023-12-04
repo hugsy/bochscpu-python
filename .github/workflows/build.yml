@@ -10,7 +10,7 @@ on:
 
 env:
   NB_CPU: 1
-  VERSION: '0.1.8'
+  VERSION: '0.1.9'
 
 jobs:
   bochscpu:

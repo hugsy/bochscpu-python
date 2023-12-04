@@ -46,7 +46,7 @@ PyType_Slot slots[] = {
 NB_MODULE(_bochscpu, m)
 {
     m.doc()               = "The native `bochscpu` module";
-    m.attr("__version__") = "0.1.8";
+    m.attr("__version__") = "0.1.9";
 
     //
     // Submodules
