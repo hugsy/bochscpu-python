@@ -82,7 +82,11 @@ Just import the `bochscpu` module and let the fun begin! Installing the package 
 Emulate a Fibonascii sequence in x64 long mode
 </summary>
 
-![image](https://github.com/hugsy/bochscpu-python/assets/590234/037e581f-c57d-4b0b-a136-6925ceecfbca)
+
+
+
+https://github.com/hugsy/bochscpu-python/assets/590234/adc5ac5a-a8eb-4982-9537-5ece3f32f8f8
+
 
 [Code](examples/long_mode_fibonacci.py)
 </details>
