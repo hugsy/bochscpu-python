@@ -3,7 +3,7 @@
 [![python 3](https://img.shields.io/badge/python-3.8+-cyan)](https://python.org)
 [![Python 3.8+](https://img.shields.io/pypi/v/bochscpu-python.svg)](https://pypi.org/project/bochscpu-python/)
 [![Downloads](https://static.pepy.tech/badge/bochscpu-python)](https://pepy.tech/project/bochscpu-python)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) 
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Licence MIT](https://img.shields.io/packagist/l/doctrine/orm.svg?maxAge=2592000?style=plastic)](https://github.com/hugsy/bochscpu-python/blob/main/LICENSE)
 
 Python bindings for [@yrp](https://github.com/yrp604/)'s [BochsCPU](https://github.com/yrp604/bochscpu) using [FFI](https://github.com/yrp604/bochscpu-ffi) to easily and accurately emulate x86 code.
@@ -53,7 +53,7 @@ Note that this approach will require you to have all the building tools necessar
  * Python 3.8+ (with development kit)
  * `cmake`
  * `pip`
- * a C++20 compatible compiler (tested `cl` for Windows, `clang++` for MacOS and `g++` Linux) 
+ * a C++20 compatible compiler (tested `cl` for Windows, `clang++` for MacOS and `g++` Linux)
 
 ### Steps
 
@@ -66,7 +66,7 @@ Note that this approach will require you to have all the building tools necessar
  * ... Alternatively you can also generate a `.whl` from the root of the project:
 
 ```bash
-python -m pip wheel . 
+python -m pip wheel .
 ```
 
 ## Usage
@@ -74,21 +74,60 @@ python -m pip wheel .
 Just import the `bochscpu` module and let the fun begin! Installing the package will also install interface files, allowing modern IDEs (VSCode, PyCharm, etc.) to offer useful completion.
 
 
-## Gallery
+## Some Examples
 
-### Emulate a Fibonascii sequence in x64 long mode
+<details>
 
-![image](https://github.com/hugsy/bochscpu-python/assets/590234/037e581f-c57d-4b0b-a136-6925ceecfbca)
+<summary>
+Emulate a Fibonascii sequence in x64 long mode
+</summary>
 
 
-### Emulate code from a Windows 11 x64 memory dump 
+
+
+https://github.com/hugsy/bochscpu-python/assets/590234/adc5ac5a-a8eb-4982-9537-5ece3f32f8f8
+
+
+[Code](examples/long_mode_fibonacci.py)
+</details>
+
+
+<details>
+
+<summary>
+Emulate code from a Windows 11 x64 memory dump
+</summary>
 
 ![image](https://github.com/hugsy/bochscpu-python/assets/590234/2ea77b17-cf59-4ec3-a38b-602d63e201f8)
 
+[Code](examples/long_mode_emulate_windows_kdump.py)
+</details>
 
-### Emulate a `print("hello world")`-like assembly code in 16 bit real mode
 
-![image](https://github.com/hugsy/bochscpu-python/assets/590234/1a49d9ef-f18a-4943-b483-4c59e64ffa82)
+<details>
+<summary>
+Emulate a <code>print("hello world")</code>-like assembly code in 16 bit real mode
+</summary>
+
+
+https://github.com/hugsy/bochscpu-python/assets/590234/eb06af06-4b10-490e-ae40-a1d0aed333ca
+
+
+[Code](examples/real_mode_print_hello_world.py)
+</details>
+
+<details>
+<summary>
+Emulate Linux Glibc's <code>rand()</code> function on x64
+</summary>
+
+
+https://github.com/hugsy/bochscpu-python/assets/590234/2486adbc-0878-46f5-83ed-3bcf9774fd26
+
+
+[Code](examples/long_mode_emulate_linux_udump.py)
+
+</details>
 
 ## Enjoy 🍻
 
