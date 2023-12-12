@@ -373,8 +373,9 @@ struct CPU
 {
     CPU()
     {
-        this->id    = g_sessionId++;
-        this->__cpu = ::bochscpu_cpu_new(this->id);
+        this->id = g_sessionId++;
+        // this->__cpu = ::bochscpu_cpu_new(this->id);
+        this->__cpu = ::bochscpu_cpu_new(0);
         if ( !this->__cpu )
             throw std::runtime_error("Invalid CPU ID");
         dbg("Created CPU#%lu", this->id);
@@ -617,7 +618,7 @@ struct Hook
     std::function<void(Session*, uint32_t, unsigned, uint64_t)> wrmsr;
     std::function<void(Session*, uint32_t, void*)> repeat_iteration;
     std::function<void(Session*, uint32_t, uint64_t, uint64_t, uintptr_t, uint32_t, uint32_t)> lin_access;
-    std::function<void(Session*, uint32_t, uint64_t, uint64_t, uintptr_t, unsigned)> phy_access;
+    std::function<void(Session*, uint32_t, uint64_t, uint64_t, uintptr_t, uint32_t)> phy_access;
     std::function<void(Session*, uint16_t, uintptr_t)> inp;
     std::function<void(Session*, uint16_t, uintptr_t, unsigned)> inp2;
     std::function<void(Session*, uint16_t, uintptr_t, unsigned)> outp;

@@ -106,7 +106,7 @@ def outp_cb(sess: bochscpu.Session, cpu_id: int, len: int, val: int):
     pass
 
 
-def phy_access_cb(sess: bochscpu.Session, cpu_id: int, lin: int, phy: int, len: int, memtype: int, rw: int):
+def phy_access_cb(sess: bochscpu.Session, cpu_id: int, lin: int, phy: int, len: int, rw: int):
     pass
 
 
