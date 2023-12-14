@@ -180,7 +180,7 @@ def emulate():
     # page fault handler
     #
     sess = bochscpu.Session()
-    sess.missing_page_handler = missing_page_cb
+    sess.missing_page_handler = bochscpu.utils.callbacks.missing_page_cb
 
     #
     # Create a CPU state and assign it to the session. The different x86 modes can be set
@@ -230,6 +230,7 @@ def emulate():
     hook.vmexit = vmexit_cb
     hook.wrmsr = wrmsr_cb
 
+    #
     # Since 0.2.0 you can use the helper `callbacks` helper module to quickly install default
     # callbacks as such:
     #

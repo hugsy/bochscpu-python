@@ -5,7 +5,7 @@ import bochscpu.cpu
 import bochscpu.memory
 import bochscpu._bochscpu as _bochscpu
 
-from . import cpu
+from . import cpu, callbacks
 
 PAGE_SIZE = bochscpu.memory.page_size()
 
