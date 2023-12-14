@@ -33,6 +33,33 @@ class GlobalSegment:
         """
         ...
 
+class TlbControlType(Enum):
+    """Class TlbControlType"""
+
+    INSTR_MOV_CR0: TlbControlType
+    INSTR_MOV_CR3: TlbControlType
+    INSTR_MOV_CR4: TlbControlType
+    INSTR_TASK_SWITCH: TlbControlType
+    INSTR_CONTEXT_SWITCH: TlbControlType
+    INSTR_INVLPG: TlbControlType
+    INSTR_INVEPT: TlbControlType
+    INSTR_INVVPID: TlbControlType
+    INSTR_INVPCID: TlbControlType
+
+class CacheControlType(Enum):
+    """Class CacheControlType"""
+
+    INSTR_INVD: CacheControlType
+    INSTR_WBINVD: CacheControlType
+
+class PrefetchType(Enum):
+    """Class PrefetchType"""
+
+    INSTR_PREFETCH_NTA: PrefetchType
+    INSTR_PREFETCH_T0: PrefetchType
+    INSTR_PREFETCH_T1: PrefetchType
+    INSTR_PREFETCH_T2: PrefetchType
+
 class HookType(Enum):
     """
     <attribute '__doc__' of 'HookType' objects>

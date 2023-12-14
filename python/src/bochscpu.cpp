@@ -54,6 +54,33 @@ NB_MODULE(_bochscpu, m)
     bochscpu_memory_module(m);
     bochscpu_cpu_module(m);
 
+
+    nb::enum_<BochsCPU::TlbControlType>(m, "TlbControlType", "Class TlbControlType")
+        .value("INSTR_MOV_CR0", BochsCPU::TlbControlType::INSTR_MOV_CR0, "TLB control type INSTR_MOV_CR0")
+        .value("INSTR_MOV_CR3", BochsCPU::TlbControlType::INSTR_MOV_CR3, "TLB control type INSTR_MOV_CR3")
+        .value("INSTR_MOV_CR4", BochsCPU::TlbControlType::INSTR_MOV_CR4, "TLB control type INSTR_MOV_CR4")
+        .value("INSTR_TASK_SWITCH", BochsCPU::TlbControlType::INSTR_TASK_SWITCH, "TLB control type INSTR_TASK_SWITCH")
+        .value(
+            "INSTR_CONTEXT_SWITCH",
+            BochsCPU::TlbControlType::INSTR_CONTEXT_SWITCH,
+            "TLB control type INSTR_CONTEXT_SWITCH")
+        .value("INSTR_INVLPG", BochsCPU::TlbControlType::INSTR_INVLPG, "TLB control type INSTR_INVLPG")
+        .value("INSTR_INVEPT", BochsCPU::TlbControlType::INSTR_INVEPT, "TLB control type INSTR_INVEPT")
+        .value("INSTR_INVVPID", BochsCPU::TlbControlType::INSTR_INVVPID, "TLB control type INSTR_INVVPID")
+        .value("INSTR_INVPCID", BochsCPU::TlbControlType::INSTR_INVPCID, "TLB control type INSTR_INVPCID")
+        .export_values();
+    nb::enum_<BochsCPU::CacheControlType>(m, "CacheControlType", "Class CacheControlType")
+        .value("INSTR_INVD", BochsCPU::CacheControlType::INSTR_INVD, "Cache control type INSTR_INVD")
+        .value("INSTR_WBINVD", BochsCPU::CacheControlType::INSTR_WBINVD, "Cache control type INSTR_WBINVD")
+        .export_values();
+    nb::enum_<BochsCPU::PrefetchType>(m, "PrefetchType", "Class PrefetchType")
+        .value("INSTR_PREFETCH_NTA", BochsCPU::PrefetchType::INSTR_PREFETCH_NTA, "Prefetch type INSTR_PREFETCH_NTA")
+        .value("INSTR_PREFETCH_T0", BochsCPU::PrefetchType::INSTR_PREFETCH_T0, "Prefetch type INSTR_PREFETCH_T0")
+        .value("INSTR_PREFETCH_T1", BochsCPU::PrefetchType::INSTR_PREFETCH_T1, "Prefetch type INSTR_PREFETCH_T1")
+        .value("INSTR_PREFETCH_T2", BochsCPU::PrefetchType::INSTR_PREFETCH_T2, "Prefetch type INSTR_PREFETCH_T2")
+        .export_values();
+
+
     nb::enum_<BochsCPU::InstructionType>(m, "InstructionType", "Class InstructionType")
         .value("IS_JMP", BochsCPU::InstructionType::BX_INSTR_IS_JMP, "Constant value for BX_INSTR_IS_JMP")
         .value(

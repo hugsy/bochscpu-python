@@ -1,17 +1,9 @@
-#
-# This snippet does nothing, but can be used as a template for quickly build stuff from bochscpu
-#
 import logging
 
 import bochscpu
 import bochscpu.cpu
-import bochscpu.memory
-import bochscpu.utils
 
 
-#
-# Callbacks
-#
 def missing_page_cb(gpa: int):
     """Edit this function to change the page fault behavior
     Args:
@@ -20,11 +12,11 @@ def missing_page_cb(gpa: int):
     raise RuntimeError(f"missing_page_cb({gpa=:#x})")
 
 
-def before_execution_cb(sess: bochscpu.Session, cpu_id: int, insn: int):
+def before_execution_cb(sess: bochscpu.Session, cpu_id: int, _: int):
     logging.debug(f"[CPU#{cpu_id}] before PC={sess.cpu.rip:#x}")
 
 
-def after_execution_cb(sess: bochscpu.Session, cpu_id: int, insn: int):
+def after_execution_cb(sess: bochscpu.Session, cpu_id: int, _: int):
     logging.debug(f"[CPU#{cpu_id}] after PC={sess.cpu.rip:#x}")
 
 
@@ -41,27 +33,37 @@ def exception_cb(
     sess.stop()
 
 
-#
-# All the other callback prototypes - see `instrumentation.txt`
-#
 def cache_cntrl_cb(sess: bochscpu.Session, cpu_id: int, what: int):
-    pass
+    """Default callback for `cache_cntrl`
+
+    The  callback  is  called each time, when Bochs simulator executes a cache/tlb
+    control instruction.
+    """
+    whatwhat = bochscpu.CacheControlType(what)
+    logging.debug(f"cache_cntrl_cb({sess=}, {cpu_id=}, {whatwhat})")
 
 
 def clflush_cb(sess: bochscpu.Session, cpu_id: int, lin_addr: int, phy_addr: int):
-    pass
+    """Default callback for `clflush`"""
+    logging.debug(f"clflush_cb({sess=}, {cpu_id=}, {lin_addr=:#x}, {phy_addr=:#x})")
 
 
 def cnear_branch_not_taken_cb(
     sess: bochscpu.Session, cpu_id: int, branch_ip: int, new_ip: int
 ):
-    pass
+    """Default callback for `cnear_branch_not_taken`"""
+    logging.debug(
+        f"cnear_branch_not_taken_cb({sess=}, {cpu_id=}, {branch_ip=:#x}, {new_ip=:#x})"
+    )
 
 
 def cnear_branch_taken_cb(
     sess: bochscpu.Session, cpu_id: int, branch_ip: int, new_ip: int
 ):
-    pass
+    """Default callback for `cnear_branch_taken`"""
+    logging.debug(
+        f"cnear_branch_taken_cb({sess=}, {cpu_id=}, {branch_ip=:#x}, {new_ip=:#x})"
+    )
 
 
 def far_branch_cb(
@@ -73,27 +75,35 @@ def far_branch_cb(
     new_cs: int,
     new_ip: int,
 ):
-    pass
+    """Default callback for `far_branch`"""
+    logging.debug(
+        f"far_branch_cb({sess=}, {cpu_id=}, {what=:#x}, {prev_cs=:#x}, {prev_ip=:#x}, {new_cs=:#x}, {new_ip=:#x})"
+    )
 
 
 def hlt_cb(sess: bochscpu.Session, cpu_id: int):
-    pass
+    """Default callback for `hlt`"""
+    logging.debug(f"hlt_cb({sess=}, {cpu_id=})")
 
 
 def hw_interrupt_cb(sess: bochscpu.Session, cpu_id: int, vector: int, cs: int, ip: int):
-    pass
+    """Default callback for `hw_interrupt`"""
+    logging.debug(f"hw_interrupt_cb({sess=}, {cpu_id=}, {vector=}, {cs=}, {ip=:#x})")
 
 
 def inp_cb(sess: bochscpu.Session, cpu_id: int, len: int):
-    pass
+    """Default callback for `inp`"""
+    logging.debug(f"inp_cb({sess=}, {cpu_id=}, {len=})")
 
 
 def inp2_cb(sess: bochscpu.Session, cpu_id: int, len: int, val: int):
-    pass
+    """Default callback for `inp2`"""
+    logging.debug(f"inp2_cb({sess=}, {cpu_id=}, {len=}, {val=})")
 
 
 def interrupt_cb(sess: bochscpu.Session, cpu_id: int, int_num: int):
-    pass
+    """Default callback for `interrupt`"""
+    logging.debug(f"interrupt_cb({sess=}, {cpu_id=}, {int_num=})")
 
 
 def lin_access_cb(
@@ -105,11 +115,15 @@ def lin_access_cb(
     memtype: int,
     rw: int,
 ):
-    pass
+    """Default callback for `lin_access`"""
+    logging.debug(
+        f"lin_access_cb(    {sess=}, {cpu_id=}, {lin=:#x}, {phy=:#x}, {len=}, {memtype=}, {rw=})"
+    )
 
 
 def mwait_cb(sess: bochscpu.Session, cpu_id: int, addr: int, len: int, flags: int):
-    pass
+    """Default callback for `mwait`"""
+    logging.debug(f"mwait_cb({sess=}, {cpu_id=}, {addr=:#x}, {len=}, {flags=})")
 
 
 def opcode_cb(
@@ -121,90 +135,77 @@ def opcode_cb(
     is32: bool,
     is64: bool,
 ):
-    pass
+    """Default callback for `opcode`"""
+    logging.debug(
+        f"opcode_cb({sess=}, {cpu_id=}, {insn=:#x}, {opcode=:#x}, {len=}, {is32=}, {is64=})"
+    )
 
 
 def outp_cb(sess: bochscpu.Session, cpu_id: int, len: int, val: int):
-    pass
+    """Default callback for `outp`"""
+    logging.debug(f"outp_cb({sess=}, {cpu_id=}, {len=}, {val=})")
 
 
 def phy_access_cb(
     sess: bochscpu.Session, cpu_id: int, lin: int, phy: int, len: int, rw: int
 ):
-    pass
+    """Default callback for `phy_access`"""
+    logging.debug(
+        f"phy_access_cb({sess=}, {cpu_id=}, {lin=:#x}, {phy=:#x}, {len=}, {rw=})"
+    )
 
 
 def prefetch_hint_cb(
     sess: bochscpu.Session, cpu_id: int, what: int, seg: int, offset: int
 ):
-    pass
+    """Default callback for `prefetch_hint`"""
+    whatwhat = bochscpu.PrefetchType(what)
+    logging.debug(
+        f"prefetch_hint_cb({sess=}, {cpu_id=}, {whatwhat}, {seg=:#x}, {offset=})"
+    )
 
 
 def repeat_iteration_cb(sess: bochscpu.Session, cpu_id: int, insn: int):
-    pass
+    """Default callback for `repeat_iteration`"""
+    logging.debug(f"repeat_iteration_cb({sess=}, {cpu_id=}, {insn=:#x})")
 
 
 def reset_cb(sess: bochscpu.Session, cpu_id: int, a2: int):
-    pass
+    """Default callback for `reset`"""
+    logging.debug(f"reset_cb({sess=}, {cpu_id=}, {a2=})")
 
 
 def tlb_cntrl_cb(sess: bochscpu.Session, cpu_id: int, what: int, new_cr_value: int):
-    pass
+    """Default callback for `tlb_cntrl`"""
+    whatwhat = bochscpu.TlbControlType(what)
+    logging.debug(f"tlb_cntrl_cb({sess=}, {cpu_id=}, {whatwhat}, {new_cr_value=:#x})")
 
 
 def ucnear_branch_cb(
     sess: bochscpu.Session, cpu_id: int, what: int, branch_ip: int, new_branch_ip: int
 ):
-    pass
+    """Default callback for `ucnear_branch`"""
+    logging.debug(
+        f"ucnear_branch_cb({sess=}, {cpu_id=}, {what=}, {branch_ip=:#x}, {new_branch_ip=:#x})"
+    )
 
 
 def vmexit_cb(sess: bochscpu.Session, cpu_id: int, reason: int, qualification: int):
-    pass
+    """Default callback for `vmexit`"""
+    logging.debug(f"vmexit_cb({sess=}, {cpu_id=}, {reason=}, {qualification=})")
 
 
 def wrmsr_cb(sess: bochscpu.Session, cpu_id: int, msr: int, value: int):
-    pass
+    """Default callback for `wrmsr`"""
+    logging.debug(f"wrmsr_cb({sess=}, {cpu_id=}, {msr=:#x}, {value=})")
 
 
-def emulate():
-    #
-    # Allocate a page on host, expose it to bochs, and fill it up
-    #
-    code_hva = bochscpu.memory.allocate_host_page()
-    code_gpa = 0x0000_7000
-    bochscpu.memory.page_insert(code_gpa, code_hva)
-    bochscpu.memory.phy_write(code_gpa, b"\xcc" * bochscpu.memory.page_size())
+def install_default_callbacks(hook: bochscpu.Hook):
+    """Install all default callbacks to the given hook.
 
-    #
-    # Create a session. A session **MUST** have at least a callback pointing to a custom
-    # page fault handler
-    #
-    sess = bochscpu.Session()
-    sess.missing_page_handler = missing_page_cb
-
-    #
-    # Create a CPU state and assign it to the session. The different x86 modes can be set
-    # thanks to helpers located in `bochscpu.cpu.set_XXXX_mode` where XXXX can be:
-    # - real
-    # - virtual8086
-    # - protected
-    # - long
-    #
-    state = bochscpu.State()
-    bochscpu.cpu.set_real_mode(state)
-
-    state.rip = code_gpa
-    state.rsp = code_gpa + 0x0800
-    sess.cpu.state = state
-
-    #
-    # Defines hook: a hook is one specific set of callbacks. Many hooks can be created, and
-    # they are all chained together when running the code
-    #
-    # The instrumentation bible is here
-    # https://github.com/bochs-emu/Bochs/blob/master/bochs/instrument/instrumentation.txt
-    #
-    hook = bochscpu.Hook()
+    Args:
+        hook (bochscpu.Hook): the hook to populate. Set callbacks will be replaced.
+    """
     hook.after_execution = after_execution_cb
     hook.before_execution = before_execution_cb
     hook.cache_cntrl = cache_cntrl_cb
@@ -229,37 +230,3 @@ def emulate():
     hook.ucnear_branch = ucnear_branch_cb
     hook.vmexit = vmexit_cb
     hook.wrmsr = wrmsr_cb
-
-    # Since 0.2.0 you can use the helper `callbacks` helper module to quickly install default
-    # callbacks as such:
-    #
-    # bochscpu.utils.callbacks.install_default_callbacks(hook)
-    #
-
-    #
-    # Create the hook chain
-    #
-    hooks = [
-        hook,  # here we only have one but we can set many
-    ]
-
-    #
-    # Start the emulation
-    #
-    sess.run(hooks)
-
-    #
-    # With the execution finished, you can read the final state of the CPU
-    #
-    final_state = sess.cpu.state
-    print(f"RIP={final_state.rip:#x}")
-    bochscpu.memory.release_host_page(code_hva)
-
-
-if __name__ == "__main__":
-    logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
-    emulate()
-    # Note: it is recommended to use an intermediary function like `emulate`
-    # rather than emulating directly from `main`. Finishing main will result
-    # in a process exit, prevent some object to be correctly cleaned which
-    # may resulting in `nanobind` throwing exception on object deletions.
