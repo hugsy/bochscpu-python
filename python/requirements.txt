@@ -2,4 +2,3 @@ black
 setuptools
 wheel
 nanobind
-nanobind-stubgen

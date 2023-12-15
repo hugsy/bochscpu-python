@@ -335,10 +335,40 @@ NB_MODULE(_bochscpu, m)
         .def_rw("missing_page_handler", &BochsCPU::Session::missing_page_handler, "Set the missing page callback")
         .def_ro("cpu", &BochsCPU::Session::cpu, "Get the CPU associated to the session")
         .def(
-            "run",
-            [](BochsCPU::Session& s, std::vector<BochsCPU::Hook>& h)
+            "get_auxiliary_variable",
+            [](BochsCPU::Session& s, size_t idx)
             {
-                if ( h.size() > MAX_HOOKS )
+                return s.auxiliaries.at(idx);
+            })
+        .def(
+            "set_auxiliary_variable",
+            [](BochsCPU::Session& s, size_t idx, uint64_t val)
+            {
+                if ( idx > BochsCPU::Session::MaxAuxiliaryVariables )
+                    return false;
+                s.auxiliaries[idx] = val;
+                return true;
+            })
+        .def(
+            "__getitem__",
+            [](BochsCPU::Session& s, size_t idx)
+            {
+                return s.auxiliaries.at(idx);
+            })
+        .def(
+            "__setitem__",
+            [](BochsCPU::Session& s, size_t idx, uint64_t val)
+            {
+                if ( idx > BochsCPU::Session::MaxAuxiliaryVariables )
+                    return false;
+                s.auxiliaries[idx] = val;
+                return true;
+            })
+        .def(
+            "run",
+            [](BochsCPU::Session& s, std::vector<BochsCPU::Hook>& hook_vector)
+            {
+                if ( hook_vector.size() > MAX_HOOKS )
                 {
                     throw std::runtime_error("Too many hooks.");
                 }
@@ -346,7 +376,7 @@ NB_MODULE(_bochscpu, m)
                 bochscpu_hooks_t hooks[MAX_HOOKS + 1] {};
                 bochscpu_hooks_t* hook_chain[MAX_HOOKS + 1] {};
 
-                for ( int i = 0; BochsCPU::Hook & _h : h )
+                for ( int i = 0; BochsCPU::Hook & _h : hook_vector )
                 {
                     //
                     // Attach a raw session pointer to the Hook context

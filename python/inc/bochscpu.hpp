@@ -608,7 +608,7 @@ missing_page_cb(uint64_t gpa)
 
 struct Session
 {
-    Session() : cpu()
+    Session() : cpu {}, auxiliaries {}
     {
         ::bochscpu_mem_missing_page(BochsCPU::Memory::missing_page_cb);
         BochsCPU::Memory::missing_page_handler =
@@ -620,8 +620,10 @@ struct Session
         BochsCPU::Memory::missing_page_handler.release();
     }
 
+    const static inline size_t MaxAuxiliaryVariables = 16;
     std::function<void(uint64_t)> missing_page_handler;
-    BochsCPU::Cpu::CPU cpu {};
+    BochsCPU::Cpu::CPU cpu;
+    std::array<uint64_t, MaxAuxiliaryVariables> auxiliaries;
 };
 
 
