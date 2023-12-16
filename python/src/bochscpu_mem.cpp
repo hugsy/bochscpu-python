@@ -92,9 +92,9 @@ bochscpu_memory_module(nb::module_& base_module)
         [](uint64_t cr3, uint64_t gva, const uint64_t sz) -> std::vector<uint8_t>
         {
             std::vector<uint8_t> bytes(sz);
-            if ( ::bochscpu_mem_virt_read(cr3, gva, bytes.data(), bytes.size()) )
+            if ( ::bochscpu_mem_virt_read(cr3, gva, bytes.data(), bytes.size()) != 0 )
             {
-                throw std::runtime_error("invalid access");
+                throw std::runtime_error("Invalid access");
             }
             return bytes;
         },

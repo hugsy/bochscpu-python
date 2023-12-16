@@ -146,6 +146,35 @@ enum class BochsCpuMode : uint32_t
     BX_MODE_LONG_64        = 4  // EFER.LMA = 1, CR0.PE=1, CS.L=1
 };
 
+// For bx_instr_tlb_cntrl
+enum class TlbControlType
+{
+    INSTR_MOV_CR0        = BX_INSTR_MOV_CR0,
+    INSTR_MOV_CR3        = BX_INSTR_MOV_CR3,
+    INSTR_MOV_CR4        = BX_INSTR_MOV_CR4,
+    INSTR_TASK_SWITCH    = BX_INSTR_TASK_SWITCH,
+    INSTR_CONTEXT_SWITCH = BX_INSTR_CONTEXT_SWITCH,
+    INSTR_INVLPG         = BX_INSTR_INVLPG,
+    INSTR_INVEPT         = BX_INSTR_INVEPT,
+    INSTR_INVVPID        = BX_INSTR_INVVPID,
+    INSTR_INVPCID        = BX_INSTR_INVPCID,
+};
+
+// For bx_instr_cache_cntrl
+enum class CacheControlType
+{
+    INSTR_INVD   = BX_INSTR_INVD,
+    INSTR_WBINVD = BX_INSTR_WBINVD,
+};
+
+// For bx_instr_prefetch_hint (what)
+enum class PrefetchType
+{
+    INSTR_PREFETCH_NTA = BX_INSTR_PREFETCH_NTA,
+    INSTR_PREFETCH_T0  = BX_INSTR_PREFETCH_T0,
+    INSTR_PREFETCH_T1  = BX_INSTR_PREFETCH_T1,
+    INSTR_PREFETCH_T2  = BX_INSTR_PREFETCH_T2,
+};
 
 namespace Callbacks
 {
@@ -579,7 +608,7 @@ missing_page_cb(uint64_t gpa)
 
 struct Session
 {
-    Session() : cpu()
+    Session() : cpu {}, auxiliaries {}
     {
         ::bochscpu_mem_missing_page(BochsCPU::Memory::missing_page_cb);
         BochsCPU::Memory::missing_page_handler =
@@ -591,8 +620,10 @@ struct Session
         BochsCPU::Memory::missing_page_handler.release();
     }
 
+    const static inline size_t MaxAuxiliaryVariables = 16;
     std::function<void(uint64_t)> missing_page_handler;
-    BochsCPU::Cpu::CPU cpu {};
+    BochsCPU::Cpu::CPU cpu;
+    std::array<uint64_t, MaxAuxiliaryVariables> auxiliaries;
 };
 
 

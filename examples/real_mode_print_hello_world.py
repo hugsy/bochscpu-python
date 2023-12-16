@@ -22,8 +22,12 @@ def after_execution_cb(sess: bochscpu.Session, cpu_id: int, insn: int):
     logging.debug(f"[CPU#{cpu_id}] after PC={sess.cpu.rip:#08x}")
 
 
-def cnear_branch_not_taken_cb(sess: bochscpu.Session, cpu_id: int, before: int, after: int):
-    logging.debug(f"in cnear_branch_not_taken_cb, {cpu_id=:#x} {before=:#x} {after=:#x}")
+def cnear_branch_not_taken_cb(
+    sess: bochscpu.Session, cpu_id: int, before: int, after: int
+):
+    logging.debug(
+        f"in cnear_branch_not_taken_cb, {cpu_id=:#x} {before=:#x} {after=:#x}"
+    )
 
 
 def cnear_branch_taken_cb(sess: bochscpu.Session, cpu_id: int, before: int, after: int):
@@ -39,12 +43,12 @@ def interrupt_cb(sess: bochscpu.Session, cpu_id: int, int_num: int):
     logging.debug(f"in interrupt_cb, {cpu_id=} received {int_num=:#x}")
     mode = sess.cpu.state.rax >> 8
     match int_num, mode:
-        case 0x10, 0x0e:
+        case 0x10, 0x0E:
             #
             # This is the main juice of the emulated interruption
             # ref: https://en.wikipedia.org/wiki/INT_10H
             #
-            char = chr(sess.cpu.state.rax & 0xff)
+            char = chr(sess.cpu.state.rax & 0xFF)
             print(f"{char}", end="")
 
             #
@@ -65,7 +69,9 @@ def exception_cb(
 ):
     match (vector, error_code):
         case _:
-            logging.warning(f"[CPU#{cpu_id}] Received exception({bochscpu.cpu.ExceptionType(vector)}, {error_code=:d}) ")
+            logging.warning(
+                f"[CPU#{cpu_id}] Received exception({bochscpu.cpu.ExceptionType(vector)}, {error_code=:d}) "
+            )
     sess.stop()
 
 
@@ -78,7 +84,9 @@ def emulate(code_str: str, data: bytes):
     assert isinstance(code, list)
     code = bytes(code)
     logging.debug(f"Compiled {len(code)} bytes")
-    code = code.ljust(PAGE_SIZE, b"\xcc") # Make sure we hit an exception, helpful for debug
+    code = code.ljust(
+        PAGE_SIZE, b"\xcc"
+    )  # Make sure we hit an exception, helpful for debug
     assert len(code) == PAGE_SIZE
 
     #
@@ -110,7 +118,7 @@ def emulate(code_str: str, data: bytes):
     _cs = bochscpu.Segment()
     _cs.base = code_gpa
     _cs.limit = PAGE_SIZE
-    _cs.selector = 6 << 3| 0 << 2 | 0 # DescriptorTable[6], TI=0->GDT, RPL=0
+    _cs.selector = 6 << 3 | 0 << 2 | 0  # DescriptorTable[6], TI=0->GDT, RPL=0
     cs_attr = bochscpu.cpu.SegmentFlags()
     cs_attr.P = True
     cs_attr.E = True
@@ -126,8 +134,8 @@ def emulate(code_str: str, data: bytes):
     _ss = bochscpu.Segment()
     _ss.present = True
     _ss.base = stack_gpa
-    _ss.limit = PAGE_SIZE >> 4 # Granularity is 16b (D off)
-    _ss.selector = 8 << 3| 0 << 2 | 0 # DescriptorTable[8], TI=0->GDT, RPL=0
+    _ss.limit = PAGE_SIZE >> 4  # Granularity is 16b (D off)
+    _ss.selector = 8 << 3 | 0 << 2 | 0  # DescriptorTable[8], TI=0->GDT, RPL=0
     ss_attr = bochscpu.cpu.SegmentFlags()
     ss_attr.P = True
     ss_attr.DB = False
@@ -144,7 +152,7 @@ def emulate(code_str: str, data: bytes):
     _ds.present = True
     _ds.base = data_gpa
     _ds.limit = PAGE_SIZE
-    _ds.selector = 10 << 3| 0 << 2 | 0 # DescriptorTable[10], TI=0->GDT, RPL=0
+    _ds.selector = 10 << 3 | 0 << 2 | 0  # DescriptorTable[10], TI=0->GDT, RPL=0
     ds_attr = bochscpu.cpu.SegmentFlags()
     ds_attr.P = True
     ds_attr.E = False

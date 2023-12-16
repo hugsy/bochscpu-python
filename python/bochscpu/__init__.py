@@ -3,4 +3,17 @@
 #
 # `_bochscpu` is the C++ module
 #
-from ._bochscpu import Hook, InstructionType, Segment, Session, State, GlobalSegment  # type: ignore
+from ._bochscpu import (  # type: ignore
+    OpcodeOperationType,
+    HookType,
+    OpcodeOperationType,
+    PrefetchType,
+    CacheControlType,
+    TlbControlType,
+    InstructionType,
+    Segment,
+    GlobalSegment,
+    Hook,
+    State,
+    Session,
+)

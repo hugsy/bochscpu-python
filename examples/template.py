@@ -52,16 +52,26 @@ def clflush_cb(sess: bochscpu.Session, cpu_id: int, lin_addr: int, phy_addr: int
     pass
 
 
-def cnear_branch_not_taken_cb(sess: bochscpu.Session, cpu_id: int, branch_ip: int, new_ip: int):
+def cnear_branch_not_taken_cb(
+    sess: bochscpu.Session, cpu_id: int, branch_ip: int, new_ip: int
+):
     pass
 
 
-def cnear_branch_taken_cb(sess: bochscpu.Session, cpu_id: int, branch_ip: int, new_ip: int):
+def cnear_branch_taken_cb(
+    sess: bochscpu.Session, cpu_id: int, branch_ip: int, new_ip: int
+):
     pass
 
 
 def far_branch_cb(
-    sess: bochscpu.Session, cpu_id: int, what: int, prev_cs: int, prev_ip: int, new_cs: int, new_ip: int
+    sess: bochscpu.Session,
+    cpu_id: int,
+    what: int,
+    prev_cs: int,
+    prev_ip: int,
+    new_cs: int,
+    new_ip: int,
 ):
     pass
 
@@ -87,7 +97,13 @@ def interrupt_cb(sess: bochscpu.Session, cpu_id: int, int_num: int):
 
 
 def lin_access_cb(
-    sess: bochscpu.Session, cpu_id: int, lin: int, phy: int, len: int, memtype: int, rw: int
+    sess: bochscpu.Session,
+    cpu_id: int,
+    lin: int,
+    phy: int,
+    len: int,
+    memtype: int,
+    rw: int,
 ):
     pass
 
@@ -97,7 +113,13 @@ def mwait_cb(sess: bochscpu.Session, cpu_id: int, addr: int, len: int, flags: in
 
 
 def opcode_cb(
-    sess: bochscpu.Session, cpu_id: int, insn: int, opcode: int, len: int, is32: bool, is64: bool
+    sess: bochscpu.Session,
+    cpu_id: int,
+    insn: int,
+    opcode: int,
+    len: int,
+    is32: bool,
+    is64: bool,
 ):
     pass
 
@@ -106,11 +128,15 @@ def outp_cb(sess: bochscpu.Session, cpu_id: int, len: int, val: int):
     pass
 
 
-def phy_access_cb(sess: bochscpu.Session, cpu_id: int, lin: int, phy: int, len: int, rw: int):
+def phy_access_cb(
+    sess: bochscpu.Session, cpu_id: int, lin: int, phy: int, len: int, rw: int
+):
     pass
 
 
-def prefetch_hint_cb(sess: bochscpu.Session, cpu_id: int, what: int, seg: int, offset: int):
+def prefetch_hint_cb(
+    sess: bochscpu.Session, cpu_id: int, what: int, seg: int, offset: int
+):
     pass
 
 
@@ -126,7 +152,9 @@ def tlb_cntrl_cb(sess: bochscpu.Session, cpu_id: int, what: int, new_cr_value: i
     pass
 
 
-def ucnear_branch_cb(sess: bochscpu.Session, cpu_id: int, what: int, branch_ip: int, new_branch_ip: int):
+def ucnear_branch_cb(
+    sess: bochscpu.Session, cpu_id: int, what: int, branch_ip: int, new_branch_ip: int
+):
     pass
 
 
@@ -152,7 +180,7 @@ def emulate():
     # page fault handler
     #
     sess = bochscpu.Session()
-    sess.missing_page_handler = missing_page_cb
+    sess.missing_page_handler = bochscpu.utils.callbacks.missing_page_cb
 
     #
     # Create a CPU state and assign it to the session. The different x86 modes can be set
@@ -201,6 +229,13 @@ def emulate():
     hook.ucnear_branch = ucnear_branch_cb
     hook.vmexit = vmexit_cb
     hook.wrmsr = wrmsr_cb
+
+    #
+    # Since 0.2.0 you can use the helper `callbacks` helper module to quickly install default
+    # callbacks as such:
+    #
+    # bochscpu.utils.callbacks.install_default_callbacks(hook)
+    #
 
     #
     # Create the hook chain

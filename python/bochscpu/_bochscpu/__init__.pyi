@@ -33,6 +33,33 @@ class GlobalSegment:
         """
         ...
 
+class TlbControlType(Enum):
+    """Class TlbControlType"""
+
+    INSTR_MOV_CR0: TlbControlType
+    INSTR_MOV_CR3: TlbControlType
+    INSTR_MOV_CR4: TlbControlType
+    INSTR_TASK_SWITCH: TlbControlType
+    INSTR_CONTEXT_SWITCH: TlbControlType
+    INSTR_INVLPG: TlbControlType
+    INSTR_INVEPT: TlbControlType
+    INSTR_INVVPID: TlbControlType
+    INSTR_INVPCID: TlbControlType
+
+class CacheControlType(Enum):
+    """Class CacheControlType"""
+
+    INSTR_INVD: CacheControlType
+    INSTR_WBINVD: CacheControlType
+
+class PrefetchType(Enum):
+    """Class PrefetchType"""
+
+    INSTR_PREFETCH_NTA: PrefetchType
+    INSTR_PREFETCH_T0: PrefetchType
+    INSTR_PREFETCH_T1: PrefetchType
+    INSTR_PREFETCH_T2: PrefetchType
+
 class HookType(Enum):
     """
     <attribute '__doc__' of 'HookType' objects>
@@ -890,6 +917,16 @@ class Session:
     """
 
     def __init__(self) -> None: ...
+    def run(self, hooks: list[bochscpu.Hook]) -> None:
+        """
+        Start the execution
+        """
+        ...
+    def stop(self) -> None:
+        """
+        Stop the execution
+        """
+        ...
     @property
     def cpu(self) -> bochscpu._bochscpu.cpu.Cpu:
         """
@@ -899,23 +936,45 @@ class Session:
     @property
     def missing_page_handler(self) -> Callable[[int, None], None]:
         """
-        Set the missing page callback
+        Get the missing page callback
         """
         ...
     @missing_page_handler.setter
     def missing_page_handler(self) -> Callable[[int, None], None]:
         """
-        Get the missing page callback
+        Set the missing page callback
         """
         ...
-    def run(self, arg: list[bochscpu._bochscpu.Hook], /) -> None:
+    @property
+    def auxiliaries(self) -> Callable[[list[int], None], None]:
         """
-        Start the execution with a set of hooks
+        Get the auxiliary variable array
         """
         ...
-    def stop(self) -> None:
+    @auxiliaries.setter
+    def auxiliaries(self) -> Callable[[list[int], None], None]:
         """
-        Stop the execution
+        Set the auxiliary variable array
+        """
+        ...
+    def set_auxiliary_variable(self, index: int, value: int) -> bool:
+        """
+        Set an auxiliary variable
+        """
+        ...
+    def get_auxiliary_variable(self, index: int) -> int:
+        """
+        Get an auxiliary variable
+        """
+        ...
+    def __setitem__(self, index: int, value: int) -> bool:
+        """
+        Alias for `set_auxiliary_variable`
+        """
+        ...
+    def __getitem__(self, index: int) -> int:
+        """
+        Alias for `get_auxiliary_variable`
         """
         ...
 

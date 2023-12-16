@@ -54,6 +54,33 @@ NB_MODULE(_bochscpu, m)
     bochscpu_memory_module(m);
     bochscpu_cpu_module(m);
 
+
+    nb::enum_<BochsCPU::TlbControlType>(m, "TlbControlType", "Class TlbControlType")
+        .value("INSTR_MOV_CR0", BochsCPU::TlbControlType::INSTR_MOV_CR0, "TLB control type INSTR_MOV_CR0")
+        .value("INSTR_MOV_CR3", BochsCPU::TlbControlType::INSTR_MOV_CR3, "TLB control type INSTR_MOV_CR3")
+        .value("INSTR_MOV_CR4", BochsCPU::TlbControlType::INSTR_MOV_CR4, "TLB control type INSTR_MOV_CR4")
+        .value("INSTR_TASK_SWITCH", BochsCPU::TlbControlType::INSTR_TASK_SWITCH, "TLB control type INSTR_TASK_SWITCH")
+        .value(
+            "INSTR_CONTEXT_SWITCH",
+            BochsCPU::TlbControlType::INSTR_CONTEXT_SWITCH,
+            "TLB control type INSTR_CONTEXT_SWITCH")
+        .value("INSTR_INVLPG", BochsCPU::TlbControlType::INSTR_INVLPG, "TLB control type INSTR_INVLPG")
+        .value("INSTR_INVEPT", BochsCPU::TlbControlType::INSTR_INVEPT, "TLB control type INSTR_INVEPT")
+        .value("INSTR_INVVPID", BochsCPU::TlbControlType::INSTR_INVVPID, "TLB control type INSTR_INVVPID")
+        .value("INSTR_INVPCID", BochsCPU::TlbControlType::INSTR_INVPCID, "TLB control type INSTR_INVPCID")
+        .export_values();
+    nb::enum_<BochsCPU::CacheControlType>(m, "CacheControlType", "Class CacheControlType")
+        .value("INSTR_INVD", BochsCPU::CacheControlType::INSTR_INVD, "Cache control type INSTR_INVD")
+        .value("INSTR_WBINVD", BochsCPU::CacheControlType::INSTR_WBINVD, "Cache control type INSTR_WBINVD")
+        .export_values();
+    nb::enum_<BochsCPU::PrefetchType>(m, "PrefetchType", "Class PrefetchType")
+        .value("INSTR_PREFETCH_NTA", BochsCPU::PrefetchType::INSTR_PREFETCH_NTA, "Prefetch type INSTR_PREFETCH_NTA")
+        .value("INSTR_PREFETCH_T0", BochsCPU::PrefetchType::INSTR_PREFETCH_T0, "Prefetch type INSTR_PREFETCH_T0")
+        .value("INSTR_PREFETCH_T1", BochsCPU::PrefetchType::INSTR_PREFETCH_T1, "Prefetch type INSTR_PREFETCH_T1")
+        .value("INSTR_PREFETCH_T2", BochsCPU::PrefetchType::INSTR_PREFETCH_T2, "Prefetch type INSTR_PREFETCH_T2")
+        .export_values();
+
+
     nb::enum_<BochsCPU::InstructionType>(m, "InstructionType", "Class InstructionType")
         .value("IS_JMP", BochsCPU::InstructionType::BX_INSTR_IS_JMP, "Constant value for BX_INSTR_IS_JMP")
         .value(
@@ -308,10 +335,40 @@ NB_MODULE(_bochscpu, m)
         .def_rw("missing_page_handler", &BochsCPU::Session::missing_page_handler, "Set the missing page callback")
         .def_ro("cpu", &BochsCPU::Session::cpu, "Get the CPU associated to the session")
         .def(
-            "run",
-            [](BochsCPU::Session& s, std::vector<BochsCPU::Hook>& h)
+            "get_auxiliary_variable",
+            [](BochsCPU::Session& s, size_t idx)
             {
-                if ( h.size() > MAX_HOOKS )
+                return s.auxiliaries.at(idx);
+            })
+        .def(
+            "set_auxiliary_variable",
+            [](BochsCPU::Session& s, size_t idx, uint64_t val)
+            {
+                if ( idx > BochsCPU::Session::MaxAuxiliaryVariables )
+                    return false;
+                s.auxiliaries[idx] = val;
+                return true;
+            })
+        .def(
+            "__getitem__",
+            [](BochsCPU::Session& s, size_t idx)
+            {
+                return s.auxiliaries.at(idx);
+            })
+        .def(
+            "__setitem__",
+            [](BochsCPU::Session& s, size_t idx, uint64_t val)
+            {
+                if ( idx > BochsCPU::Session::MaxAuxiliaryVariables )
+                    return false;
+                s.auxiliaries[idx] = val;
+                return true;
+            })
+        .def(
+            "run",
+            [](BochsCPU::Session& s, std::vector<BochsCPU::Hook>& hook_vector)
+            {
+                if ( hook_vector.size() > MAX_HOOKS )
                 {
                     throw std::runtime_error("Too many hooks.");
                 }
@@ -319,7 +376,7 @@ NB_MODULE(_bochscpu, m)
                 bochscpu_hooks_t hooks[MAX_HOOKS + 1] {};
                 bochscpu_hooks_t* hook_chain[MAX_HOOKS + 1] {};
 
-                for ( int i = 0; BochsCPU::Hook & _h : h )
+                for ( int i = 0; BochsCPU::Hook & _h : hook_vector )
                 {
                     //
                     // Attach a raw session pointer to the Hook context
