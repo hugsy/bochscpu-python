@@ -957,7 +957,7 @@ class Session:
         Set the auxiliary variable array
         """
         ...
-    def set_auxiliary_variable(self, index: int, value: int) -> bool:
+    def set_auxiliary_variable(self, index: int, value: int) -> None:
         """
         Set an auxiliary variable
         """
@@ -967,7 +967,7 @@ class Session:
         Get an auxiliary variable
         """
         ...
-    def __setitem__(self, index: int, value: int) -> bool:
+    def __setitem__(self, index: int, value: int) -> None:
         """
         Alias for `set_auxiliary_variable`
         """

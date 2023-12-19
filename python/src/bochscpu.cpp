@@ -6,6 +6,8 @@
 #include <nanobind/stl/list.h>
 #include <nanobind/stl/vector.h>
 
+#include <string>
+
 
 namespace nb = nanobind;
 using namespace nb::literals;
@@ -344,10 +346,10 @@ NB_MODULE(_bochscpu, m)
             "set_auxiliary_variable",
             [](BochsCPU::Session& s, size_t idx, uint64_t val)
             {
-                if ( idx > BochsCPU::Session::MaxAuxiliaryVariables )
-                    return false;
+                if ( idx >= BochsCPU::Session::MaxAuxiliaryVariables )
+                    throw std::out_of_range(
+                        "Invalid range, maximum index is " + std::to_string(BochsCPU::Session::MaxAuxiliaryVariables));
                 s.auxiliaries[idx] = val;
-                return true;
             })
         .def(
             "__getitem__",
@@ -359,10 +361,10 @@ NB_MODULE(_bochscpu, m)
             "__setitem__",
             [](BochsCPU::Session& s, size_t idx, uint64_t val)
             {
-                if ( idx > BochsCPU::Session::MaxAuxiliaryVariables )
-                    return false;
+                if ( idx >= BochsCPU::Session::MaxAuxiliaryVariables )
+                    throw std::out_of_range(
+                        "Invalid range, maximum index is " + std::to_string(BochsCPU::Session::MaxAuxiliaryVariables));
                 s.auxiliaries[idx] = val;
-                return true;
             })
         .def(
             "run",
