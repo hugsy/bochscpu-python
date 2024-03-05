@@ -48,7 +48,7 @@ jobs:
       run: |
         echo NB_CPU=$(sysctl -n hw.ncpu) >> $GITHUB_ENV
 
-    - uses: microsoft/setup-msbuild@v1
+    - uses: microsoft/setup-msbuild@v2
       if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'windows-latest'
 
     - uses: ilammy/msvc-dev-cmd@v1
