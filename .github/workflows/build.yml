@@ -27,11 +27,11 @@ jobs:
     name: bochscpu / ${{ matrix.variant.os }} / ${{ matrix.variant.arch }}
     steps :
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Cache Artifacts
       id: cache-artifacts
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: artifact
         key: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ env.BOCHS_REV }}
@@ -73,7 +73,7 @@ jobs:
         cp -v bxbuild/bochscpu-ffi/target/debug/lib*.a artifact/RelWithDebInfo/
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         if-no-files-found: error
         name: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}
@@ -96,10 +96,10 @@ jobs:
       CMAKE_FLAGS: ""
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Download BochsCPU libs
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       id: download_artifact
       with:
         name: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}
@@ -110,7 +110,7 @@ jobs:
         mv ${{steps.download_artifact.outputs.download-path}}/* bochscpu/lib/
 
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         architecture: ${{ matrix.variant.py-arch }}
@@ -154,7 +154,7 @@ jobs:
         python -m pip wheel . -w ./wheel
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: bochscpu-${{ env.VERSION }}-py${{ matrix.python-version }}-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}
         path: |
@@ -181,7 +181,7 @@ jobs:
       id-token: write
     steps:
       - name: Download artifact for ${{ matrix.variant.os }}/${{ matrix.python-version }}/${{ matrix.variant.config }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         id: download_wheels
         with:
           name: bochscpu-${{ env.VERSION }}-py${{ matrix.python-version }}-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}
