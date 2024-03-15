@@ -10,12 +10,11 @@ on:
 
 env:
   NB_CPU: 1
-  VERSION: '0.3'
+  VERSION: '0.3.1'
+  BOCHS_REV: REL_2_8_FINAL
 
 jobs:
   bochscpu:
-    env:
-      BOCHS_REV: 8dd9649389c813a189e3f702d58cdedb93730343
     strategy:
       fail-fast: false
       matrix:
@@ -76,13 +75,13 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         if-no-files-found: error
-        name: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}
+        name: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ env.BOCHS_REV }}
         path: artifact
 
   bindings:
     needs: bochscpu
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         variant:
@@ -102,7 +101,7 @@ jobs:
       uses: actions/download-artifact@v4
       id: download_artifact
       with:
-        name: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}
+        name: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ env.BOCHS_REV }}
         path: bochscpu-artifact
 
     - name: Setup BochsCPU libs
