@@ -14,11 +14,11 @@ mkdir bxbuild
 cd bxbuild
 
 git clone https://github.com/yrp604/bochscpu-build.git
-git clone https://github.com/yrp604/bochscpu.git
+git clone https://github.com/hugsy/bochscpu.git
 git clone https://github.com/yrp604/bochscpu-ffi.git
 
 cd bochscpu-build
-bash prep.sh && cd Bochs/bochs && sh .conf.cpu && make -j ${NB_CPU}|| true
+bash prep.sh && cd Bochs/bochs && sh .conf.cpu && make -j ${NB_CPU} || true
 
 # Remove old files in bochscpu.
 rm -rf ../../../bochscpu/bochs
