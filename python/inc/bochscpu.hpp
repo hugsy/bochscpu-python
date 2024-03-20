@@ -108,7 +108,6 @@ enum class InstructionType : uint32_t
     BOCHSCPU_INSTR_IS_SYSEXIT       = BOCHSCPU_INSTR_IS_SYSEXIT,
 };
 
-
 enum class HookType : uint32_t
 {
     BOCHSCPU_HOOK_MEM_READ          = BOCHSCPU_HOOK_MEM_READ,
@@ -125,7 +124,6 @@ enum class HookType : uint32_t
     BOCHSCPU_HOOK_TLB_INVVPID       = BOCHSCPU_HOOK_TLB_INVVPID,
     BOCHSCPU_HOOK_TLB_INVPCID       = BOCHSCPU_HOOK_TLB_INVPCID,
 };
-
 
 enum class OpcodeOperationType
 {
@@ -407,16 +405,18 @@ struct CPU
         this->__cpu = ::bochscpu_cpu_new(0);
         if ( !this->__cpu )
             throw std::runtime_error("Invalid CPU ID");
-        dbg("Created CPU#%lu", this->id);
+        dbg("Created CPU#%lu at %#x", this->id, this->__cpu);
     }
 
     ~CPU()
     {
+        dbg("Destroying CPU#%lu at %#x", this->id, this->__cpu);
         ::bochscpu_cpu_delete(this->__cpu);
+        this->__cpu = nullptr;
     }
 
     uint32_t id {0};
-    bochscpu_cpu_t __cpu {};
+    bochscpu_cpu_t __cpu {nullptr};
 };
 } // namespace Cpu
 
