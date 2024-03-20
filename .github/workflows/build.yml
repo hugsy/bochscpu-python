@@ -153,12 +153,12 @@ jobs:
         python -m pip wheel . -w ./wheel
 
     - name: Install
-      if: matrix.python-version == '3.12'
       run: |
         python -m pip install . --user --upgrade
         python -m pip install capstone keystone-engine --user --upgrade
 
     - name: Tests
+      if: matrix.python-version == '3.12'
       run: |
         python examples/long_mode_fibonacci.py
         python examples/real_mode_print_hello_world.py
