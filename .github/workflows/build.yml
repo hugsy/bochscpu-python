@@ -81,7 +81,7 @@ jobs:
   bindings:
     needs: bochscpu
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         variant:
@@ -151,6 +151,17 @@ jobs:
         cmake --build ./build --verbose --config ${{ matrix.variant.config }} --parallel ${{ env.NB_CPU }}
         cmake --install ./build --verbose --config ${{ matrix.variant.config }} --prefix ./artifact
         python -m pip wheel . -w ./wheel
+
+    - name: Install
+      run: |
+        python -m pip install . --user --upgrade
+        python -m pip install capstone keystone-engine --user --upgrade
+
+    - name: Tests
+      if: matrix.python-version == '3.12'
+      run: |
+        python examples/long_mode_fibonacci.py
+        python examples/real_mode_print_hello_world.py --debug
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4

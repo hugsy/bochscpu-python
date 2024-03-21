@@ -131,6 +131,14 @@ struct Zmm
     Zmm() = default;
 };
 
+struct Floatx80
+{
+    uint64_t fraction {};
+    uint16_t exp {};
+
+    Floatx80() = default;
+};
+
 struct State
 {
     uint64_t bochscpu_seed {};
@@ -179,7 +187,7 @@ struct State
     uint16_t fpsw {};
     uint16_t fptw {};
     uint16_t fpop {};
-    std::array<uint64_t, 8> fpst {};
+    std::array<Floatx80, 8> fpst {};
     uint32_t mxcsr {};
     uint32_t mxcsr_mask {};
     uint64_t tsc {};
@@ -206,6 +214,8 @@ using bochscpu_cpu_seg_t = Seg;
 using bochscpu_cpu_global_seg_t = GlobalSeg;
 
 using bochscpu_cpu_zmm_t = Zmm;
+
+using bochscpu_cpu_floatx80_t = Floatx80;
 
 using bochscpu_instr_t = const void*;
 
