@@ -1,5 +1,5 @@
 <p align="center">
-   <img alt="logo3" src="https://github.com/hugsy/bochscpu-python/assets/590234/81e6dbce-f541-4b26-8085-b2e561c62396"  width="250px"/>
+   <img alt="logo3" src="https://github.com/hugsy/bochscpu-python/assets/590234/decb861d-8d2e-46b5-ae7e-5fc90d4fc98f"  width="250px"/> 
 </p>
 
 # bochscpu-python
