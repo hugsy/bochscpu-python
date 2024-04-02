@@ -1,3 +1,7 @@
+<p align="center">
+   <img alt="logo3" src="https://github.com/hugsy/bochscpu-python/assets/590234/81e6dbce-f541-4b26-8085-b2e561c62396"  width="250px"/>
+</p>
+
 # bochscpu-python
 
 [![Python 3.8+](https://img.shields.io/pypi/v/bochscpu-python.svg)](https://pypi.org/project/bochscpu-python/)
