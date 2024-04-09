@@ -30,3 +30,8 @@ wheel.py-api = "cp312"
 minimum-version = "0.4"
 build-dir = "build/{wheel_tag}"
 cmake.minimum-version = "3.20"
+
+# Uncomment for debug (+ASAN)
+# cmake.verbose = true
+# logging.level = "DEBUG"
+# cmake.build-type = "Debug"
