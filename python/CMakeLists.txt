@@ -43,3 +43,24 @@ install(TARGETS _bochscpu LIBRARY DESTINATION bochscpu)
 if(MSVC)
     install(FILES $<TARGET_PDB_FILE:_bochscpu> DESTINATION . OPTIONAL)
 endif(MSVC)
+
+#
+# Build with ASAN if available AND debug build
+#
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-fsanitize=address" HAS_ASAN_AVAILABLE)
+
+if(HAS_ASAN_AVAILABLE)
+    message(STATUS "Found Address Sanitizer")
+    target_compile_definitions(_bochscpu
+    PUBLIC
+        $<$<CONFIG:Debug>:_DISABLE_VECTOR_ANNOTATION _DISABLE_STRING_ANNOTATION >
+    )
+    target_compile_options(_bochscpu
+    PUBLIC
+        $<$<CONFIG:Debug>:-fsanitize=address>
+    )
+else()
+    message(STATUS "Address Sanitizer not found")
+endif(HAS_ASAN_AVAILABLE)
+
