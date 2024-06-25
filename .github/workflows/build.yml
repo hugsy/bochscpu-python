@@ -113,6 +113,10 @@ jobs:
         python-version: ${{ matrix.python-version }}
         architecture: ${{ matrix.variant.py-arch }}
 
+    - name: Install Python pre-requisites
+      run: |
+        python -m pip install --user --upgrade nanobind
+
     - name: Environment Setup (Windows)
       if: startsWith(matrix.variant.os, 'windows-')
       run: |
