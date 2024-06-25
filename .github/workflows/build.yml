@@ -20,7 +20,7 @@ jobs:
       matrix:
         variant:
           - {os: windows-2019,     arch: x64}
-          - {os: windows-2022,     arch: x64}
+          # - {os: windows-2022,     arch: x64}
           - {os: ubuntu-22.04,     arch: x64}
           - {os: ubuntu-24.04,     arch: x64}
           - {os: macos-13,         arch: x64}
@@ -91,7 +91,7 @@ jobs:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         variant:
           - {os: windows-2019,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
-          - {os: windows-2022,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          # - {os: windows-2022,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
           - {os: ubuntu-22.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
           - {os: ubuntu-24.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
           - {os: macos-13,         arch: x64,    config: Release,         py-arch: x64}
@@ -186,19 +186,24 @@ jobs:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         variant:
-          - {os: windows-2019,  arch: x64, config: RelWithDebInfo,  py-arch: x64}
-          - {os: ubuntu-22.04,  arch: x64, config: RelWithDebInfo,  py-arch: x64}
-          - {os: macos-13,      arch: x64, config: Release,         py-arch: x64}
+          - {os: windows-2019,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          # - {os: windows-2022,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          - {os: ubuntu-22.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          - {os: ubuntu-24.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          - {os: macos-13,         arch: x64,    config: Release,         py-arch: x64}
+          - {os: macos-13-xlarge,  arch: arm64,  config: Release,         py-arch: arm64}
+          - {os: macos-14,         arch: arm64,  config: Release,         py-arch: arm64}
+          - {os: macos-14-large,   arch: x64,    config: Release,         py-arch: x64}
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-    name: PyPI upload of ${{ matrix.variant.os }}/${{ matrix.python-version }}/py${{ matrix.python-version }}
+    name: PyPI upload of ${{ matrix.variant.os }}/${{ matrix.variant.arch }}/${{ matrix.variant.config }}/py${{ matrix.python-version }}
     environment:
       name: pypi
       url: https://pypi.org/p/bochscpu-python
     permissions:
       id-token: write
     steps:
-      - name: Download artifact for ${{ matrix.variant.os }}/${{ matrix.python-version }}/${{ matrix.variant.config }}
+      - name: Download artifact for ${{ matrix.variant.os }}/${{ matrix.variant.arch }}/${{ matrix.python-version }}/${{ matrix.variant.config }}
         uses: actions/download-artifact@v4
         id: download_wheels
         with:
