@@ -19,9 +19,9 @@ jobs:
       fail-fast: false
       matrix:
         variant:
-          - {os: windows-latest, arch: x64}
-          - {os: ubuntu-latest, arch: x64}
-          - {os: macos-latest, arch: x64}
+          - {os: windows-2019,   arch: x64}
+          - {os: ubuntu-22.04,   arch: x64}
+          - {os: macos-13,       arch: x64}
     runs-on: ${{ matrix.variant.os }}
     name: bochscpu / ${{ matrix.variant.os }} / ${{ matrix.variant.arch }}
     steps :
@@ -35,26 +35,26 @@ jobs:
         path: artifact
         key: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ env.BOCHS_REV }}
 
-    - if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'windows-latest'
+    - if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'windows-')
       run: |
         echo NB_CPU=$env:NUMBER_OF_PROCESSORS | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-    - if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'ubuntu-latest'
+    - if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'ubuntu-')
       run: |
         echo "NB_CPU=$(grep -c ^processor /proc/cpuinfo)" >> $GITHUB_ENV
 
-    - if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'macos-latest'
+    - if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'macos-')
       run: |
         echo NB_CPU=$(sysctl -n hw.ncpu) >> $GITHUB_ENV
 
     - uses: microsoft/setup-msbuild@v2
-      if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'windows-latest'
+      if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'windows-')
 
     - uses: ilammy/msvc-dev-cmd@v1
-      if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'windows-latest'
+      if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'windows-')
 
     - name: Build BochsCPU (Windows)
-      if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os == 'windows-latest'
+      if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'windows-')
       run: |
         .\.github\build-bochscpu.bat
         mkdir artifact; mkdir artifact/release; mkdir artifact/debug; mkdir artifact/relwithdebinfo
@@ -63,7 +63,7 @@ jobs:
         cp -Verbose bxbuild/bochscpu-ffi/target/debug/*.lib artifact/relwithdebinfo/
 
     - name: Build BochsCPU (Linux & MacOS)
-      if: steps.cache-artifacts.outputs.cache-hit != 'true' && matrix.variant.os != 'windows-latest'
+      if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'windows-')
       run: |
         bash .github/build-bochscpu.sh
         mkdir artifact artifact/Release artifact/Debug artifact/RelWithDebInfo
@@ -85,10 +85,9 @@ jobs:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         variant:
-          - {os: windows-latest, arch: x64, config: RelWithDebInfo, py-arch: x64}
-        #   - {os: windows-latest, arch: arm64, config: RelWithDebInfo, py-arch: x64} # Unsupported (see https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json)
-          - {os: ubuntu-latest, arch: x64, config: RelWithDebInfo, py-arch: x64}
-          - {os: macos-latest, arch: x64, config: Release, py-arch: x64}
+          - {os: windows-2019,  arch: x64, config: RelWithDebInfo,  py-arch: x64}
+          - {os: ubuntu-22.04,  arch: x64, config: RelWithDebInfo,  py-arch: x64}
+          - {os: macos-13,      arch: x64, config: Release,         py-arch: x64}
     runs-on: ${{ matrix.variant.os }}
     name: bindings / ${{ matrix.variant.os }} / ${{ matrix.python-version }} / ${{ matrix.variant.config }}
     env:
@@ -119,7 +118,7 @@ jobs:
         python -m pip install --user --upgrade -r python/requirements.txt
 
     - name: Environment Setup (Windows)
-      if: matrix.variant.os == 'windows-latest'
+      if: startsWith(matrix.variant.os, 'windows-')
       run: |
         echo NB_CPU=$env:NUMBER_OF_PROCESSORS | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         echo CMAKE_ARCH='-A ${{ matrix.variant.arch }}' | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
@@ -127,7 +126,7 @@ jobs:
         Invoke-VisualStudio2022${{ matrix.variant.arch }}
 
     - name: Environment Setup (Linux)
-      if: matrix.variant.os == 'ubuntu-latest'
+      if: startsWith(matrix.variant.os, 'ubuntu-')
       run: |
         echo "NB_CPU=$(grep -c ^processor /proc/cpuinfo)" >> $GITHUB_ENV
         sudo apt-get -y update
@@ -136,7 +135,7 @@ jobs:
         echo CXX=g++ >> $GITHUB_ENV
 
     - name: Environment Setup (MacOS)
-      if: matrix.variant.os == 'macos-latest'
+      if: startsWith(matrix.variant.os, 'macos-')
       run: |
         echo NB_CPU=$(sysctl -n hw.ncpu) >> $GITHUB_ENV
         echo CC=gcc >> $GITHUB_ENV
@@ -154,8 +153,7 @@ jobs:
 
     - name: Install
       run: |
-        python -m pip install . --user --upgrade
-        python -m pip install capstone keystone-engine --user --upgrade
+        python -m pip install .[tests] --user --upgrade
 
     - name: Tests
       if: matrix.python-version == '3.12'
@@ -178,9 +176,9 @@ jobs:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         variant:
-          - {os: windows-latest, arch: x64, config: RelWithDebInfo, py-arch: x64}
-          - {os: ubuntu-latest, arch: x64, config: RelWithDebInfo, py-arch: x64}
-          - {os: macos-latest, arch: x64, config: Release, py-arch: x64}
+          - {os: windows-2019,  arch: x64, config: RelWithDebInfo,  py-arch: x64}
+          - {os: ubuntu-22.04,  arch: x64, config: RelWithDebInfo,  py-arch: x64}
+          - {os: macos-13,      arch: x64, config: Release,         py-arch: x64}
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
     name: PyPI upload of ${{ matrix.variant.os }}/${{ matrix.python-version }}/py${{ matrix.python-version }}
