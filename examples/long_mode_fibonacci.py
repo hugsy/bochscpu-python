@@ -62,6 +62,8 @@ def lin_access_cb(
 ):
     global stats
     # dbg(f"{lin=:#x} {phy=:#x} {len=:d} {rw=:d} {access=:d}")
+    if access not in stats.mem_access:
+        stats.mem_access[access] = 0
     stats.mem_access[access] += 1
 
 
