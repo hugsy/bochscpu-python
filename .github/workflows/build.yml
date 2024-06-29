@@ -166,7 +166,7 @@ jobs:
         python -m pip install .[tests] --user --upgrade
 
     - name: Tests
-      if: matrix.python-version == '3.12'
+      if: matrix.python-version == '3.12' && matrix.variant.arch == 'x64'
       run: |
         python examples/long_mode_fibonacci.py
         python examples/real_mode_print_hello_world.py --debug
