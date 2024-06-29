@@ -162,7 +162,7 @@ jobs:
         python -m pip wheel . -w ./wheel
 
     - name: Build wheels
-      if: matrix.variant.arch == 'x64'
+      if: matrix.python-version == '3.12' && matrix.variant.arch == 'x64' && matrix.variant.os == 'ubuntu-22.04'
       uses: pypa/cibuildwheel@v2.19.1
 
     - name: Install
