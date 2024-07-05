@@ -24,8 +24,8 @@ jobs:
           - {os: ubuntu-22.04,     arch: x64}
           - {os: ubuntu-24.04,     arch: x64}
           - {os: macos-13,         arch: x64}
-          - {os: macos-13-xlarge,  arch: arm64}
-          - {os: macos-14-large,   arch: x64}
+          # - {os: macos-13-xlarge,  arch: arm64}
+          # - {os: macos-14-large,   arch: x64}
           - {os: macos-14,         arch: arm64}
     runs-on: ${{ matrix.variant.os }}
     name: bochscpu / ${{ matrix.variant.os }} / ${{ matrix.variant.arch }}
@@ -95,9 +95,9 @@ jobs:
           - {os: ubuntu-22.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
           - {os: ubuntu-24.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
           - {os: macos-13,         arch: x64,    config: Release,         py-arch: x64}
-          - {os: macos-13-xlarge,  arch: arm64,  config: Release,         py-arch: arm64}
+          # - {os: macos-13-xlarge,  arch: arm64,  config: Release,         py-arch: arm64}
           - {os: macos-14,         arch: arm64,  config: Release,         py-arch: arm64}
-          - {os: macos-14-large,   arch: x64,    config: Release,         py-arch: x64}
+          # - {os: macos-14-large,   arch: x64,    config: Release,         py-arch: x64}
     runs-on: ${{ matrix.variant.os }}
     name: bindings / ${{ matrix.variant.os }} / ${{ matrix.python-version }} / ${{ matrix.variant.config }}
     env:
