@@ -386,45 +386,31 @@ def emulate(dmp_path: str):
     logging.debug(f"Setting PML4 to {PML4_ADDRESS:#x}")
     state.cr3 = PML4_ADDRESS
 
-    # TODO lief NOTE_TYPE.PRSTATUS is broken
-    # regs = None
-    # type = lief.ELF.NOTE_TYPES_CORE.PRSTATUS
-    # prstatus: lief.ELF.CorePrStatus = dmp.get(lief.ELF.NOTE_TYPES.PRSTATUS)
-    # regs = prstatus.register_context
-
-    regs = {
-        "R15": 0,
-        "R14": 0,
-        "R13": 0x7FFFFFFFDFD0,
-        "R12": 0x55555555AAB0,
-        "Rbp": 0,
-        "Rbx": 0,
-        "R11": 0x246,
-        "R10": 0x77,
-        "R9": 0x555555578500,
-        "R8": 0x5555555782A0,
-        "Rax": 0x1C,
-        "Rcx": 0x00007FFFF7E19280,
-        "Rdx": 0x7FFFF7FC9040,
-        "Rsi": 0x10,
-        "Rdi": 0x00,
-        "Rip": 0x00005555555551E9,
-        "Eflags": 0x202,
-        "Rsp": 0x7FFFFFFFDFD0,
-        "Cs": 0x33,
-        "Ss": 0x2B,
+    prstatus = dmp.get(lief.ELF.Note.TYPE.CORE_PRSTATUS)
+    regs = { name: prstatus.get(getattr(lief.ELF.CorePrStatus.Registers.X86_64, name.upper())) \
+                   for name in (
+                    "R15",
+                    "R14",
+                    "R13",
+                    "R12",
+                    "Rbp",
+                    "Rbx",
+                    "R11",
+                    "R10",
+                    "R9",
+                    "R8",
+                    "Rax",
+                    "Rcx",
+                    "Rdx",
+                    "Rsi",
+                    "Rdi",
+                    "Rip",
+                    "Eflags",
+                    "Rsp",
+                    "Cs",
+                    "Ss"
+                )
     }
-
-    # for note in dmp.notes:
-    #     print(note.type_core)
-    #     if note.type_core != lief.ELF.NOTE_TYPES_CORE.PRSTATUS:
-    #         continue
-    #     print(note)
-    #     print(dir(note))
-
-    #     # assert isinstance(note, lief.ELF.CorePrStatus), f"unexpected type {type(note)}"
-    #     regs = note.register_context
-    #     logging.debug(f"{regs=}")
 
     assert regs
 
