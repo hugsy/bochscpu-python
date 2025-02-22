@@ -192,12 +192,18 @@ jobs:
           - {os: ubuntu-24.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
           - {os: ubuntu-24.04-arm, arch: arm64,  config: RelWithDebInfo,  py-arch: arm64}
           - {os: macos-15,         arch: arm64,  config: Release,         py-arch: arm64}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.variant.os }}
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: bochscpu-${{ env.VERSION }}-py${{ matrix.python-version }}-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}
           path: wheel
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.variant.py-arch }}
 
       - name: Install
         shell: bash
