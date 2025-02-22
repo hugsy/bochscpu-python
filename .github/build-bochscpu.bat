@@ -11,21 +11,27 @@ pushd .
 mkdir bxbuild
 cd bxbuild
 
-REM Use WSL to configure / clone the repositories.
-bash -c "git clone https://github.com/yrp604/bochscpu-build.git && git clone https://github.com/hugsy/bochscpu.git && git clone https://github.com/yrp604/bochscpu-ffi.git && cd bochscpu-build && bash prep.sh && cd Bochs/bochs && bash .conf.cpu-msvc"
+git clone https://github.com/yrp604/bochscpu-build.git
+git clone https://github.com/yrp604/bochscpu-ffi.git
+git clone https://github.com/yrp604/bochscpu.git
+
+bash -c "cd bochscpu-build && bash prep.sh && cd Bochs/bochs && bash .conf.cpu-msvc"
 
 REM Build bochs; libinstrument.a is expected to fail to build so don't freak out.
 REM You can run nmake all-clean to clean up the build.
 cd bochscpu-build\Bochs\bochs
 set CL=/MP
-nmake
 
-REM Remove old files in bochscpu.
-rmdir /s /q ..\..\..\bochscpu\bochs
-rmdir /s /q ..\..\..\bochscpu\lib
+nmake cpu\softfloat3e\libsoftfloat.a
+nmake cpu\fpu\libfpu.a
+nmake cpu\avx\libavx.a
+nmake cpu\cpudb\libcpudb.a
+nmake cpu\libcpu.a
+REM nmake
 
 REM Create the libs directory where we stuff all the libs.
 mkdir ..\..\..\bochscpu\lib
+copy cpu\softfloat3e\libsoftfloat.a ..\..\..\bochscpu\lib\softfloat.lib
 copy cpu\libcpu.a ..\..\..\bochscpu\lib\cpu.lib
 copy cpu\fpu\libfpu.a ..\..\..\bochscpu\lib\fpu.lib
 copy cpu\avx\libavx.a ..\..\..\bochscpu\lib\avx.lib
@@ -39,8 +45,8 @@ REM Now its time to build it.
 cd ..\..\..\bochscpu-ffi
 REM cargo clean -p bochscpu shits its pants on my computer so rebuilding everything
 cargo clean
-cargo build -j %NB_CPU%
-cargo build -j %NB_CPU% --release
+cargo build --jobs %NB_CPU%
+cargo build --jobs %NB_CPU% --release
 
 REM Get back to where we were.
 popd

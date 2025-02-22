@@ -18,7 +18,7 @@ git clone https://github.com/hugsy/bochscpu.git
 git clone https://github.com/hugsy/bochscpu-ffi.git
 
 cd bochscpu-build
-bash prep.sh && cd Bochs/bochs && sh .conf.cpu 
+bash prep.sh && cd Bochs/bochs && sh .conf.cpu
 make -j ${NB_CPU} -C cpu/fpu
 make -j ${NB_CPU} -C cpu/avx
 make -j ${NB_CPU} -C cpu/cpudb
