@@ -19,6 +19,7 @@ nmake cpu\avx\libavx.a
 nmake cpu\cpudb\libcpudb.a
 nmake cpu\libcpu.a
 
+# Don't actually need the rest
 # nmake
 
 Remove-Item -Recurse -Force -ErrorAction Ignore ..\..\..\bochscpu\bochs
@@ -32,7 +33,7 @@ Copy-Item cpu\cpudb\libcpudb.a ..\..\..\bochscpu\lib\cpudb.lib
 Copy-Item .\cpu\softfloat3e\libsoftfloat.a ..\..\..\bochscpu\lib\softfloat.lib
 
 New-Item -ItemType Directory -Name ..\..\..\bochscpu\bochs
-Copy-Item -Force -Recurse -Verbose . ..\..\..\bochscpu\bochs
+Copy-Item -Recurse . ..\..\..\bochscpu\bochs
 
 Set-Location ..\..\..\bochscpu-ffi
 cargo clean
