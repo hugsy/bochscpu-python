@@ -58,7 +58,7 @@ jobs:
     - name: Build BochsCPU (Windows)
       if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'windows-')
       run: |
-        .\.github\build-bochscpu.bat
+        .\.github\build-bochscpu.ps1
         mkdir artifact; mkdir artifact/release; mkdir artifact/debug; mkdir artifact/relwithdebinfo
         cp -Verbose bxbuild/bochscpu-ffi/target/release/*.lib artifact/release/
         cp -Verbose bxbuild/bochscpu-ffi/target/debug/*.lib artifact/debug/
