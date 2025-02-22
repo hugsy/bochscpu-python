@@ -55,6 +55,10 @@ jobs:
     - uses: ilammy/msvc-dev-cmd@v1
       if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'windows-')
 
+    - name: Setup
+      run: |
+        rustup update
+
     - name: Build BochsCPU (Windows)
       if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'windows-')
       run: |
