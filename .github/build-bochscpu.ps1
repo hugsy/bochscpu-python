@@ -33,7 +33,7 @@ Copy-Item cpu\cpudb\libcpudb.a ..\..\..\bochscpu\lib\cpudb.lib
 Copy-Item cpu\softfloat3e\libsoftfloat.a ..\..\..\bochscpu\lib\softfloat.lib
 
 New-Item -ItemType Directory -Name ..\..\..\bochscpu\bochs
-Copy-Item -Recurse . ..\..\..\bochscpu
+Copy-Item -Recurse -Force . ..\..\..\bochscpu
 
 Set-Location ..\..\..\bochscpu-ffi
 cargo clean
