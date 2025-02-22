@@ -200,6 +200,7 @@ jobs:
           path: wheel
 
       - name: Install
+        shell: bash
         run: |
           cd wheel
           python -m pip install *.whl --user --upgrade
