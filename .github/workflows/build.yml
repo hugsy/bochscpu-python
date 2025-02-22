@@ -11,7 +11,7 @@ on:
 env:
   NB_CPU: 1
   VERSION: '0.4.0'
-  BOCHS_REV: REL_2_8_FINAL
+  BOCHS_REV: 3cf98b28541d337270c34b1068113fef294551a2
 
 jobs:
   bochscpu:
@@ -19,14 +19,14 @@ jobs:
       fail-fast: false
       matrix:
         variant:
-          - {os: windows-2019,     arch: x64}
-          - {os: windows-2022,     arch: x64}
-          - {os: ubuntu-22.04,     arch: x64}
-          - {os: ubuntu-24.04,     arch: x64}
-          - {os: macos-13,         arch: x64}
-          # - {os: macos-13-xlarge,  arch: arm64}
-          # - {os: macos-14-large,   arch: x64}
-          - {os: macos-14,         arch: arm64}
+          - {os: windows-2019,       arch: x64}
+          - {os: windows-2022,       arch: x64}
+          - {os: ubuntu-22.04,       arch: x64}
+          - {os: ubuntu-24.04,       arch: x64}
+          - {os: ubuntu-24.04-arm,   arch: arm64}
+          - {os: macos-13,           arch: x64}
+          - {os: macos-14,           arch: arm64}
+          - {os: macos-15,           arch: arm64}
     runs-on: ${{ matrix.variant.os }}
     name: bochscpu / ${{ matrix.variant.os }} / ${{ matrix.variant.arch }}
     steps :
@@ -41,16 +41,13 @@ jobs:
         key: bochscpu-libs-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ env.BOCHS_REV }}
 
     - if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'windows-')
-      run: |
-        echo NB_CPU=$env:NUMBER_OF_PROCESSORS | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      run: echo NB_CPU=$env:NUMBER_OF_PROCESSORS | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'ubuntu-')
-      run: |
-        echo "NB_CPU=$(grep -c ^processor /proc/cpuinfo)" >> $GITHUB_ENV
+      run: echo "NB_CPU=$(grep -c ^processor /proc/cpuinfo)" >> $GITHUB_ENV
 
     - if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'macos-')
-      run: |
-        echo NB_CPU=$(sysctl -n hw.ncpu) >> $GITHUB_ENV
+      run: echo NB_CPU=$(sysctl -n hw.ncpu) >> $GITHUB_ENV
 
     - uses: microsoft/setup-msbuild@v2
       if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'windows-')
@@ -58,10 +55,14 @@ jobs:
     - uses: ilammy/msvc-dev-cmd@v1
       if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'windows-')
 
+    - name: Setup
+      run: |
+        rustup update
+
     - name: Build BochsCPU (Windows)
       if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'windows-')
       run: |
-        .\.github\build-bochscpu.bat
+        .\.github\build-bochscpu.ps1
         mkdir artifact; mkdir artifact/release; mkdir artifact/debug; mkdir artifact/relwithdebinfo
         cp -Verbose bxbuild/bochscpu-ffi/target/release/*.lib artifact/release/
         cp -Verbose bxbuild/bochscpu-ffi/target/debug/*.lib artifact/debug/
@@ -88,16 +89,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
         variant:
           - {os: windows-2019,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
           - {os: windows-2022,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
           - {os: ubuntu-22.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
           - {os: ubuntu-24.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          - {os: ubuntu-24.04-arm, arch: arm64,  config: RelWithDebInfo,  py-arch: arm64}
           - {os: macos-13,         arch: x64,    config: Release,         py-arch: x64}
-          # - {os: macos-13-xlarge,  arch: arm64,  config: Release,         py-arch: arm64}
           - {os: macos-14,         arch: arm64,  config: Release,         py-arch: arm64}
-          # - {os: macos-14-large,   arch: x64,    config: Release,         py-arch: x64}
+          - {os: macos-15,         arch: arm64,  config: Release,         py-arch: arm64}
     runs-on: ${{ matrix.variant.os }}
     name: bindings / ${{ matrix.variant.os }} / ${{ matrix.python-version }} / ${{ matrix.variant.config }}
     env:
@@ -161,19 +162,15 @@ jobs:
         cmake --install ./build --verbose --config ${{ matrix.variant.config }} --prefix ./artifact
         python -m pip wheel . -w ./wheel
 
-    - name: Build wheels
-      if: matrix.python-version == '3.12' && matrix.variant.arch == 'x64' && matrix.variant.os == 'ubuntu-22.04'
-      uses: pypa/cibuildwheel@v2.19.1
-
     - name: Install
       run: |
         python -m pip install .[tests] --user --upgrade
 
-    - name: Tests
-      if: matrix.python-version == '3.12' && matrix.variant.arch == 'x64'
+    - name: Build wheels
+      if: matrix.python-version == '3.12' && matrix.variant.arch == 'x64' && matrix.variant.os == 'ubuntu-22.04'
       run: |
-        python examples/long_mode_fibonacci.py
-        python examples/real_mode_print_hello_world.py --debug
+        python -m pip install cibuildwheel==2.22.0
+        python -m cibuildwheel --output-dir wheelhouse
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
@@ -184,21 +181,60 @@ jobs:
           wheel/
           wheelhouse/
 
-  publish:
+  tests:
     needs: bindings
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.13']
+        variant:
+          - {os: windows-2022,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          - {os: ubuntu-24.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          - {os: ubuntu-24.04-arm, arch: arm64,  config: RelWithDebInfo,  py-arch: arm64}
+          - {os: macos-15,         arch: arm64,  config: Release,         py-arch: arm64}
+    runs-on: ${{ matrix.variant.os }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: bochscpu-${{ env.VERSION }}-py${{ matrix.python-version }}-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}
+          path: .
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.variant.py-arch }}
+
+      - name: Install
+        shell: bash
+        run: |
+          python -m pip install wheel/*.whl --user --upgrade
+          python -m pip install capstone keystone-engine --user --upgrade
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Tests
+        run: |
+          python -c "import bochscpu"
+          python examples/long_mode_fibonacci.py
+          python examples/real_mode_print_hello_world.py --debug
+
+  publish:
+    needs: tests
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
         variant:
           - {os: windows-2019,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
-          # - {os: windows-2022,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          - {os: windows-2022,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
           - {os: ubuntu-22.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
           - {os: ubuntu-24.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          - {os: ubuntu-24.04-arm, arch: arm64,  config: RelWithDebInfo,  py-arch: arm64}
           - {os: macos-13,         arch: x64,    config: Release,         py-arch: x64}
-          - {os: macos-13-xlarge,  arch: arm64,  config: Release,         py-arch: arm64}
           - {os: macos-14,         arch: arm64,  config: Release,         py-arch: arm64}
-          - {os: macos-14-large,   arch: x64,    config: Release,         py-arch: x64}
+          - {os: macos-15,         arch: arm64,  config: Release,         py-arch: arm64}
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
     name: PyPI upload of ${{ matrix.variant.os }}/${{ matrix.variant.arch }}/${{ matrix.variant.config }}/py${{ matrix.python-version }}

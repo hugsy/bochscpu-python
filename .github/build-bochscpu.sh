@@ -14,11 +14,16 @@ mkdir bxbuild
 cd bxbuild
 
 git clone https://github.com/yrp604/bochscpu-build.git
-git clone https://github.com/hugsy/bochscpu.git
+git clone https://github.com/yrp604/bochscpu.git
 git clone https://github.com/yrp604/bochscpu-ffi.git
 
 cd bochscpu-build
-bash prep.sh && cd Bochs/bochs && sh .conf.cpu && make -j ${NB_CPU} || true
+bash prep.sh && cd Bochs/bochs && sh .conf.cpu
+make -j ${NB_CPU} -C cpu/fpu
+make -j ${NB_CPU} -C cpu/avx
+make -j ${NB_CPU} -C cpu/cpudb
+make -j ${NB_CPU} -C cpu/softfloat3e
+make -j ${NB_CPU} -C cpu
 
 # Remove old files in bochscpu.
 rm -rf ../../../bochscpu/bochs
@@ -26,10 +31,7 @@ rm -rf ../../../bochscpu/lib
 
 # Create the libs directory where we stuff all the libs.
 mkdir ../../../bochscpu/lib
-cp -v cpu/libcpu.a ../../../bochscpu/lib/libcpu.a
-cp -v cpu/fpu/libfpu.a ../../../bochscpu/lib/libfpu.a
-cp -v cpu/avx/libavx.a ../../../bochscpu/lib/libavx.a
-cp -v cpu/cpudb/libcpudb.a ../../../bochscpu/lib/libcpudb.a
+find . -type f -name 'lib*.a' -exec cp -v {} ../../../bochscpu/lib/ \;
 make all-clean
 
 # Now we want to copy the bochs directory over there.
