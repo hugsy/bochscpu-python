@@ -208,7 +208,7 @@ jobs:
       - name: Install
         shell: bash
         run: |
-          python -m pip install wheel/*.whl wheelhouse/*.whl --user --upgrade
+          python -m pip install wheel/*.whl --user --upgrade
 
       - name: Tests
         run: |
