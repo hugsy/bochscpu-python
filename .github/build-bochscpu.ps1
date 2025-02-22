@@ -12,7 +12,7 @@ git clone https://github.com/yrp604/bochscpu-ffi.git
 bash -c "cd bochscpu-build && bash prep.sh && cd Bochs/bochs && bash .conf.cpu-msvc"
 
 Set-Location bochscpu-build\Bochs\bochs
-$env:CL = "/MP"
+$env:CL = "/MP$env:NUMBER_OF_PROCESSORS"
 nmake cpu\softfloat3e\libsoftfloat.a
 nmake cpu\fpu\libfpu.a
 nmake cpu\avx\libavx.a
@@ -29,6 +29,7 @@ Copy-Item cpu\libcpu.a ..\..\..\bochscpu\lib\cpu.lib
 Copy-Item cpu\fpu\libfpu.a ..\..\..\bochscpu\lib\fpu.lib
 Copy-Item cpu\avx\libavx.a ..\..\..\bochscpu\lib\avx.lib
 Copy-Item cpu\cpudb\libcpudb.a ..\..\..\bochscpu\lib\cpudb.lib
+Copy-Item .\cpu\softfloat3e\libsoftfloat.a ..\..\..\bochscpu\lib\softfloat.lib
 
 New-Item -ItemType Directory -Name ..\..\..\bochscpu\bochs
 Copy-Item -Force -Recurse -Verbose . ..\..\..\bochscpu\bochs
