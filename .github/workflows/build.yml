@@ -197,7 +197,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: bochscpu-${{ env.VERSION }}-py${{ matrix.python-version }}-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}
-          path: wheel
+          path: .
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -208,8 +208,7 @@ jobs:
       - name: Install
         shell: bash
         run: |
-          cd wheel
-          python -m pip install *.whl --user --upgrade
+          python -m pip install wheel/*.whl wheelhouse/*.whl --user --upgrade
 
       - name: Tests
         run: |
