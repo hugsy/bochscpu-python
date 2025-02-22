@@ -210,6 +210,9 @@ jobs:
         run: |
           python -m pip install wheel/*.whl --user --upgrade
 
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Tests
         run: |
           python -c "import bochscpu"
