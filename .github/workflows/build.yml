@@ -246,12 +246,16 @@ jobs:
     steps:
       - name: Download artifact for ${{ matrix.variant.os }}/${{ matrix.variant.arch }}/${{ matrix.python-version }}/${{ matrix.variant.config }}
         uses: actions/download-artifact@v4
-        id: download_wheels
         with:
           name: bochscpu-${{ env.VERSION }}-py${{ matrix.python-version }}-${{ matrix.variant.os }}.${{ matrix.variant.config }}-${{ matrix.variant.arch }}
           path: wheel
+      - name: Cleanup
+        run: |
+          rm wheel/wheel/nanobind-*
+          rm wheel/wheel/setuptools-*
+          rm wheel/wheel/wheel-*
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: ${{ steps.download_wheels.outputs.download-path }}/wheel/
+          packages-dir: wheel/wheel/
           print-hash: true
