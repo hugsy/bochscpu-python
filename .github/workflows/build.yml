@@ -10,8 +10,9 @@ on:
 
 env:
   NB_CPU: 1
-  VERSION: '0.4.0'
-  BOCHS_REV: 3cf98b28541d337270c34b1068113fef294551a2
+  VERSION: '0.5.0'
+  # BOCHS_REV: f75e315b289ca3409ed02bce0e141bb3fccdb35c
+  BOCHS_REV: b64f49ea56e191a2d3a3f010d9f6b167c5beb7a0
 
 jobs:
   bochscpu:
@@ -19,14 +20,16 @@ jobs:
       fail-fast: false
       matrix:
         variant:
-          - {os: windows-2019,       arch: x64}
-          - {os: windows-2022,       arch: x64}
-          - {os: ubuntu-22.04,       arch: x64}
-          - {os: ubuntu-24.04,       arch: x64}
-          - {os: ubuntu-24.04-arm,   arch: arm64}
-          - {os: macos-13,           arch: x64}
-          - {os: macos-14,           arch: arm64}
-          - {os: macos-15,           arch: arm64}
+          # - {os: windows-2019,       arch: x64}
+          # - {os: windows-2022,       arch: x64}
+          - {os: windows-2025,       arch: x64}
+          # - {os: windows-11-arm,       arch: arm64}
+          # - {os: ubuntu-22.04,       arch: x64}
+          # - {os: ubuntu-24.04,       arch: x64}
+          # - {os: ubuntu-24.04-arm,   arch: arm64}
+          # - {os: macos-13,           arch: x64}
+          # - {os: macos-14,           arch: arm64}
+          # - {os: macos-15,           arch: arm64}
     runs-on: ${{ matrix.variant.os }}
     name: bochscpu / ${{ matrix.variant.os }} / ${{ matrix.variant.arch }}
     steps :
@@ -62,11 +65,14 @@ jobs:
     - name: Build BochsCPU (Windows)
       if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'windows-')
       run: |
+        mkdir artifact
+        mkdir artifact/debug
+        mkdir artifact/release
+        mkdir artifact/relwithdebinfo
         .\.github\build-bochscpu.ps1
-        mkdir artifact; mkdir artifact/release; mkdir artifact/debug; mkdir artifact/relwithdebinfo
-        cp -Verbose bxbuild/bochscpu-ffi/target/release/*.lib artifact/release/
         cp -Verbose bxbuild/bochscpu-ffi/target/debug/*.lib artifact/debug/
-        cp -Verbose bxbuild/bochscpu-ffi/target/debug/*.lib artifact/relwithdebinfo/
+        cp -Verbose bxbuild/bochscpu-ffi/target/release/*.lib artifact/release/
+        cp -Verbose bxbuild/bochscpu-ffi/target/release/*.lib artifact/relwithdebinfo/
 
     - name: Build BochsCPU (Linux & MacOS)
       if: steps.cache-artifacts.outputs.cache-hit != 'true' && startsWith(matrix.variant.os, 'windows-') == false
@@ -75,7 +81,7 @@ jobs:
         mkdir artifact artifact/Release artifact/Debug artifact/RelWithDebInfo
         cp -v bxbuild/bochscpu-ffi/target/release/lib*.a artifact/Release/
         cp -v bxbuild/bochscpu-ffi/target/debug/lib*.a artifact/Debug/
-        cp -v bxbuild/bochscpu-ffi/target/debug/lib*.a artifact/RelWithDebInfo/
+        cp -v bxbuild/bochscpu-ffi/target/release/lib*.a artifact/RelWithDebInfo/
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
@@ -91,14 +97,15 @@ jobs:
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
         variant:
-          - {os: windows-2019,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
-          - {os: windows-2022,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
-          - {os: ubuntu-22.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
-          - {os: ubuntu-24.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
-          - {os: ubuntu-24.04-arm, arch: arm64,  config: RelWithDebInfo,  py-arch: arm64}
-          - {os: macos-13,         arch: x64,    config: Release,         py-arch: x64}
-          - {os: macos-14,         arch: arm64,  config: Release,         py-arch: arm64}
-          - {os: macos-15,         arch: arm64,  config: Release,         py-arch: arm64}
+          # - {os: windows-2019,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          # - {os: windows-2022,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          - {os: windows-2025,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          # - {os: ubuntu-22.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          # - {os: ubuntu-24.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          # - {os: ubuntu-24.04-arm, arch: arm64,  config: RelWithDebInfo,  py-arch: arm64}
+          # - {os: macos-13,         arch: x64,    config: Release,         py-arch: x64}
+          # - {os: macos-14,         arch: arm64,  config: Release,         py-arch: arm64}
+          # - {os: macos-15,         arch: arm64,  config: Release,         py-arch: arm64}
     runs-on: ${{ matrix.variant.os }}
     name: bindings / ${{ matrix.variant.os }} / ${{ matrix.python-version }} / ${{ matrix.variant.config }}
     env:
@@ -199,10 +206,10 @@ jobs:
       matrix:
         python-version: ['3.13']
         variant:
-          - {os: windows-2022,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
-          - {os: ubuntu-24.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
-          - {os: ubuntu-24.04-arm, arch: arm64,  config: RelWithDebInfo,  py-arch: arm64}
-          - {os: macos-15,         arch: arm64,  config: Release,         py-arch: arm64}
+          - {os: windows-2025,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          # - {os: ubuntu-24.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          # - {os: ubuntu-24.04-arm, arch: arm64,  config: RelWithDebInfo,  py-arch: arm64}
+          # - {os: macos-15,         arch: arm64,  config: Release,         py-arch: arm64}
     runs-on: ${{ matrix.variant.os }}
     steps:
       - uses: actions/download-artifact@v4
@@ -238,14 +245,15 @@ jobs:
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
         variant:
-          - {os: windows-2019,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
-          - {os: windows-2022,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
-          - {os: ubuntu-22.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
-          - {os: ubuntu-24.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
-          - {os: ubuntu-24.04-arm, arch: arm64,  config: RelWithDebInfo,  py-arch: arm64}
-          - {os: macos-13,         arch: x64,    config: Release,         py-arch: x64}
-          - {os: macos-14,         arch: arm64,  config: Release,         py-arch: arm64}
-          - {os: macos-15,         arch: arm64,  config: Release,         py-arch: arm64}
+          # - {os: windows-2019,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          # - {os: windows-2022,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          - {os: windows-2025,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          # - {os: ubuntu-22.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          # - {os: ubuntu-24.04,     arch: x64,    config: RelWithDebInfo,  py-arch: x64}
+          # - {os: ubuntu-24.04-arm, arch: arm64,  config: RelWithDebInfo,  py-arch: arm64}
+          # - {os: macos-13,         arch: x64,    config: Release,         py-arch: x64}
+          # - {os: macos-14,         arch: arm64,  config: Release,         py-arch: arm64}
+          # - {os: macos-15,         arch: arm64,  config: Release,         py-arch: arm64}
     runs-on: ubuntu-24.04
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
     name: PyPI upload of ${{ matrix.variant.os }}/${{ matrix.variant.arch }}/${{ matrix.variant.config }}/py${{ matrix.python-version }}
